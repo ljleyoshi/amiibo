@@ -154,6 +154,42 @@ button,input,select{font:inherit;color:inherit}
 .states button.on.bought{background:#3b82f6;color:#fff}
 .states button.on.own{background:var(--ok);color:#fff}
 .states button:disabled{opacity:.6}
+.mebtn{position:absolute;top:0;right:0;width:42px;height:42px;border-radius:50%;border:2px solid rgba(255,255,255,.7);color:#fff;font-weight:900;cursor:pointer;z-index:2}
+.hero-top{padding-right:46px}
+.auth{min-height:92vh;display:grid;place-items:center;padding:20px 0}
+.auth-card{width:min(420px,100%);background:var(--surface);border-radius:26px;box-shadow:var(--shadow);padding:28px 24px 22px}
+.auth-card .logo img{width:64px;height:64px;border-radius:18px;display:block;margin:0 auto 12px;box-shadow:0 8px 24px rgba(75,47,214,.35)}
+.auth-card h1{text-align:center;margin:0 0 6px;font-size:24px;font-weight:900}
+.auth-card .sub{text-align:center;color:var(--muted);font-weight:600;margin:0 0 6px;line-height:1.45;font-size:14px}
+.af label,#accF label,#cpF label{display:block;font-weight:800;font-size:13px;color:var(--muted);margin:14px 0 6px}
+.af input[type=email],.af input[type=password],.af input[type=text],#accF input[type=text],#accF input[type=email],#accF select,.pw input{width:100%;height:48px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);padding:0 14px;font-weight:700;outline:0}
+.af input:focus,#accF input:focus,.pw input:focus{border-color:var(--accent2)}
+.af .big{margin-top:6px}
+.pw{position:relative}.pw input{padding-right:48px}
+.eye{position:absolute;right:6px;top:6px;width:36px;height:36px;border:0;background:none;color:var(--muted);cursor:pointer;display:grid;place-items:center}
+.lnk.center{display:block;margin:16px auto 0;font-size:14px}
+.note{background:color-mix(in srgb,var(--accent2) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--accent2) 35%,var(--line));border-radius:14px;padding:12px 14px;font-size:13.5px;font-weight:600;line-height:1.45;margin:12px 0}
+.note.warn{background:color-mix(in srgb,#ffc531 14%,var(--surface));border-color:color-mix(in srgb,#ffc531 45%,var(--line))}
+.copy{display:flex;gap:8px;margin-top:8px}.copy input{flex:1;min-width:0;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--bg);padding:0 10px;font-size:12px}
+.acct{text-align:center;margin:6px 0 18px}.acct h3{margin:10px 0 2px;font-size:22px;font-weight:900}.acct small{color:var(--muted);font-weight:700}
+.avatar{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:900;font-size:15px}
+.big-av{width:72px;height:72px;font-size:26px;margin:0 auto}
+.big.ghost{background:var(--bg);color:var(--ink);margin-top:12px}
+.big.danger{background:color-mix(in srgb,#d92d20 14%,var(--surface));color:#d92d20;margin-top:10px}
+#cpF{display:grid;gap:0;margin-top:6px}#cpF .big{margin-top:14px}
+.cntb{font-size:13px;background:var(--bg);color:var(--muted);border-radius:99px;padding:2px 9px;vertical-align:middle}
+.acclist{margin-top:14px;display:grid;gap:8px}
+.accrow{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:16px;background:var(--bg)}
+.accrow.off{opacity:.55}
+.accinfo{flex:1;min-width:0}.accinfo b{display:block;font-weight:900}.accinfo b i{font-weight:700;color:var(--muted)}
+.accinfo small{display:block;color:var(--muted);font-weight:700;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.tag{font-size:11px;font-weight:900;padding:2px 8px;border-radius:99px;background:var(--line);color:var(--ink)}
+.tag.r-admin{background:#4b2fd6;color:#fff}.tag.r-collection{background:var(--ok);color:#fff}.tag.r-proche{background:#ff8a3d;color:#fff}
+.tag.warn{background:#ffc531;color:#3a2a00}.tag.soft{background:none;color:var(--muted);padding-left:0}
+.mini{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 10px;cursor:pointer;font-weight:800}
+.accact{margin-top:6px}
+#accF .check{margin:16px 0 18px}
 .hint{text-align:center;color:var(--muted);font-size:12px;font-weight:700;margin:6px 0 0}
 .links{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
 .lk{display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;font-weight:800;font-size:14px;color:var(--ink);
@@ -208,15 +244,17 @@ form input:focus,form select:focus{border-color:var(--accent2)}
 /* ---------- Réglage : adresse de l'API Apps Script (se termine par /exec) ---------- */
 const API_URL = 'https://script.google.com/macros/s/AKfycbxKtmza_ypFP42FXAaNnDxKsl984pEBeroPEIv4RF2wukZV8F-XXnPTZvLtK9W9Yk24/exec';
 
-/* ---------- Code personnel (dans le lien ?k=…) ---------- */
-const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
-const CODE=(new URLSearchParams(location.search).get('k')||store.get('amiibo_k')||'').trim();
-if(CODE) store.set('amiibo_k',CODE);
+/* ---------- Session (jeton de connexion) ---------- */
+const mk=t=>({get:k=>{try{return t().getItem(k)}catch(e){return null}},set:(k,v)=>{try{v==null||v===''?t().removeItem(k):t().setItem(k,v)}catch(e){}}});
+const store=mk(()=>localStorage), sstore=mk(()=>sessionStorage);
+let TOKEN=sstore.get('amiibo_t')||store.get('amiibo_t')||'';
+function setToken(t,remember){TOKEN=t||'';store.set('amiibo_t',remember&&t?t:'');sstore.set('amiibo_t',t||'');if(!t)store.set('amiibo_cache','')}
+store.set('amiibo_k','');   // ancien système de liens à code : supprimé
 
 function call(fn){
   const args=[].slice.call(arguments,1);
   if(window.DEMO_API) return new Promise((res,rej)=>setTimeout(()=>{try{res(DEMO_API[fn].apply(null,args))}catch(e){rej(e)}},250));
-  return fetch(API_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({k:CODE,a:fn,args})})
+  return fetch(API_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({t:TOKEN,a:fn,args})})
     .then(r=>{if(!r.ok)throw new Error('Serveur indisponible ('+r.status+')');return r.json()},e=>{throw new Error('Pas de connexion au serveur. Vérifiez votre connexion Internet.')})
     .then(j=>{if(!j.ok){const e=new Error(j.error||'Erreur inconnue');e.auth=j.auth===false;throw e}return j.data});
 }
@@ -277,6 +315,7 @@ function render(){
       <div class="ring"><svg width="112" height="112" viewBox="0 0 112 112"><circle cx="56" cy="56" r="48" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="11"/>
         <circle cx="56" cy="56" r="48" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct/100)}" style="transition:stroke-dashoffset .6s"/></svg>
         <div class="pct"><div>${pct}%<small>COMPLÉTÉ</small></div></div></div>
+      <button class="mebtn" id="meBtn" aria-label="Mon compte" style="background:${color(d.user||'?')}">${esc(initials(d.user||'?'))}</button>
       <div><h1>${esc(d.title.replace(/^Liste\s+/i,'Collection ').replace(/amiibos/i,'amiibo'))}</h1><p>${owned} amiibo sur ${total}</p></div>
     </div>
     <div class="kpis ${A?'k4':''}">
@@ -296,9 +335,10 @@ function render(){
       return `<button class="chip ${S.serie===i?'on':''} ${n&&o===n?'done':''}" data-s="${i}">${esc(s.name)}<i>${o}/${n}</i></button>`}).join('')}</div>
   </div>
   <main class="${canToggle()?'':'ro'}">${body}</main>
-  <p class="foot">Bonjour ${esc(d.user||'')} · ${A?'super utilisateur':d.role==='edit'?'collection':'mode proche'}${d.sheetUrl?` · <a href="${esc(d.sheetUrl)}" target="_blank">Ouvrir le Google Sheet</a>`:''}</p>`;
+  <p class="foot">Connecté : <a href="#" id="meLink">${esc(d.user||'')}</a> · ${A?'super utilisateur':d.role==='edit'?'collection':'mode proche'}${d.sheetUrl?` · <a href="${esc(d.sheetUrl)}" target="_blank">Ouvrir le Google Sheet</a>`:''}</p>`;
 
   $('#fab').hidden=!A;
+  $('#meBtn').onclick=openAccount; $('#meLink').onclick=e=>{e.preventDefault();openAccount()};
   const qi=$('#q'); $('#clr').style.display=S.q?'block':'none';
   qi.addEventListener('input',()=>{S.q=qi.value;const p=qi.selectionStart;render();const n=$('#q');n.focus();n.setSelectionRange(p,p)});
   $('#clr').onclick=e=>{e.preventDefault();S.q='';render()};
@@ -446,22 +486,167 @@ let tt; function toast(m,err){const t=$('#toast');t.textContent=m;t.className='t
 function confetti(){const e=['⭐','🎉','✨','🌟','🍄'];for(let i=0;i<36;i++){const s=document.createElement('span');s.className='confetti';s.textContent=e[i%e.length];
   s.style.left=Math.random()*100+'vw';s.style.animationDuration=(1.6+Math.random()*1.6)+'s';s.style.animationDelay=Math.random()*.4+'s';document.body.appendChild(s);setTimeout(()=>s.remove(),3800)}}
 
-/* ---------- Démarrage ---------- */
-function noAccess(msg){
-  $('#app').innerHTML=`<div class="empty"><div>🔒</div><b>${esc(msg)}</b><br><br>Ouvrez le lien personnel qu’on vous a envoyé (il contient <code>?k=</code>).</div>`;
+/* ---------- Connexion ---------- */
+const EYE='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+function pwField(id,label,ac){return `<label for="${id}">${label}</label><div class="pw"><input type="password" id="${id}" autocomplete="${ac}" required minlength="${ac==='current-password'?1:8}"><button type="button" class="eye" data-eye="${id}" aria-label="Afficher le mot de passe">${EYE}</button></div>`}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-eye]');if(!b)return;const i=document.getElementById(b.dataset.eye);i.type=i.type==='password'?'text':'password'});
+function authShell(inner){
+  closeAll(); $('#fab').hidden=true;
+  $('#app').innerHTML=`<div class="auth"><div class="auth-card"><div class="logo"><img src="icon-192.png" alt=""></div>${inner}</div></div>`;
 }
+function busyBtn(b,on,txt){b.disabled=on;if(on){b.dataset.t=b.textContent;b.textContent=txt||'Patientez…'}else if(b.dataset.t)b.textContent=b.dataset.t}
+function showLogin(msg,email){
+  authShell(`<h1>Collection amiibo</h1><p class="sub">Connectez-vous pour accéder à la collection.</p>
+    ${msg?`<div class="note">${esc(msg)}</div>`:''}
+    <form id="loginF" class="af">
+      <label for="lEmail">E-mail</label><input type="email" id="lEmail" autocomplete="username" required value="${esc(email||store.get('amiibo_last_email')||'')}">
+      ${pwField('lPass','Mot de passe','current-password')}
+      <label class="check"><input type="checkbox" id="lRem" checked> Rester connecté sur cet appareil</label>
+      <button class="big add" id="lGo">Se connecter</button>
+    </form>
+    <button class="lnk center" id="toForgot">Mot de passe oublié ?</button>`);
+  $(email||store.get('amiibo_last_email')?'#lPass':'#lEmail').focus();
+  $('#toForgot').onclick=()=>showForgot($('#lEmail').value);
+  $('#loginF').onsubmit=e=>{
+    e.preventDefault(); const b=$('#lGo'); busyBtn(b,true,'Connexion…');
+    const email=$('#lEmail').value.trim(), rem=$('#lRem').checked;
+    call('login',email,$('#lPass').value,rem).then(r=>{store.set('amiibo_last_email',email);setToken(r.token,rem);load()})
+      .catch(err=>{busyBtn(b,false);toast(err.message,true);$('#lPass').select()});
+  };
+}
+function showForgot(email){
+  authShell(`<h1>Mot de passe oublié</h1><p class="sub">Indiquez l’e-mail de votre compte : vous recevrez un lien pour choisir un nouveau mot de passe.</p>
+    <form id="fgF" class="af"><label for="fgEmail">E-mail</label><input type="email" id="fgEmail" autocomplete="username" required value="${esc(email||'')}">
+    <button class="big add" id="fgGo">Recevoir le lien</button></form>
+    <button class="lnk center" id="toLogin">Retour à la connexion</button>`);
+  $('#fgEmail').focus(); $('#toLogin').onclick=()=>showLogin();
+  $('#fgF').onsubmit=e=>{
+    e.preventDefault(); const b=$('#fgGo'); busyBtn(b,true,'Envoi…'); const em=$('#fgEmail').value.trim();
+    call('forgotPassword',em).then(()=>showLogin('Si un compte existe pour '+em+', un e-mail vient de lui être envoyé. Pensez à regarder dans les spams. Le lien est valable 1 heure.',em))
+      .catch(err=>{busyBtn(b,false);toast(err.message,true)});
+  };
+}
+function showSetPassword(linkToken){
+  authShell(`<div class="loader" style="min-height:120px"><div class="spin"></div></div>`);
+  call('resetInfo',linkToken).then(info=>{
+    authShell(`<h1>${info.kind==='invite'?'Bienvenue '+esc(info.name)+' !':'Nouveau mot de passe'}</h1>
+      <p class="sub">${info.kind==='invite'?'Choisissez le mot de passe de votre compte':'Choisissez un nouveau mot de passe pour'} <b>${esc(info.email)}</b>.</p>
+      <form id="spF" class="af">${pwField('sp1','Mot de passe (8 caractères minimum)','new-password')}${pwField('sp2','Confirmer le mot de passe','new-password')}
+      <button class="big add" id="spGo">Enregistrer et me connecter</button></form>`);
+    $('#sp1').focus();
+    $('#spF').onsubmit=e=>{
+      e.preventDefault();
+      if($('#sp1').value!==$('#sp2').value){toast('Les deux mots de passe sont différents.',true);return}
+      const b=$('#spGo'); busyBtn(b,true,'Enregistrement…');
+      call('setPasswordWithToken',linkToken,$('#sp1').value).then(r=>{
+        store.set('amiibo_last_email',r.user.email); setToken(r.token,true);
+        history.replaceState(null,'',location.pathname); toast('Mot de passe enregistré'); load();
+      }).catch(err=>{busyBtn(b,false);toast(err.message,true)});
+    };
+  }).catch(err=>{history.replaceState(null,'',location.pathname);showLogin(err.message)});
+}
+
+/* ---------- Mon compte ---------- */
+function openAccount(){
+  const d=$('#detail'), u=S.data; d.dataset.row='';
+  d.innerHTML=`<div class="grab"></div><button class="x" data-close aria-label="Fermer">✕</button>
+    <div class="acct"><div class="avatar big-av" style="background:${color(u.user||'?')}">${esc(initials(u.user||'?'))}</div>
+    <h3>${esc(u.user)}</h3><small>${esc(u.email||'')} · ${u.role==='admin'?'admin':u.role==='edit'?'collection':'proche'}</small></div>
+    ${u.role==='admin'?`<button class="big add" id="goAccounts">👥 Gérer les comptes</button>`:''}
+    <details class="imgEdit"><summary>🔑 Changer mon mot de passe</summary>
+      <form id="cpF">${pwField('cp0','Mot de passe actuel','current-password')}${pwField('cp1','Nouveau mot de passe (8 caractères minimum)','new-password')}${pwField('cp2','Confirmer','new-password')}
+      <button class="big add" id="cpGo">Changer le mot de passe</button></form>
+      <p>Vos autres appareils seront déconnectés.</p></details>
+    <button class="big ghost" id="logout">Se déconnecter</button>`;
+  open(d);
+  const ga=$('#goAccounts'); if(ga) ga.onclick=openAccounts;
+  $('#logout').onclick=()=>{call('logout').catch(()=>{});setToken('');S.data=null;showLogin('Vous êtes déconnecté.')};
+  $('#cpF').onsubmit=e=>{
+    e.preventDefault(); if($('#cp1').value!==$('#cp2').value){toast('Les deux mots de passe sont différents.',true);return}
+    const b=$('#cpGo'); busyBtn(b,true);
+    call('changePassword',$('#cp0').value,$('#cp1').value).then(r=>{setToken(r.token,!!store.get('amiibo_t'));closeAll();toast('Mot de passe changé')})
+      .catch(err=>{busyBtn(b,false);toast(err.message,true)});
+  };
+}
+
+/* ---------- Gestion des comptes (admin) ---------- */
+const ROLE_TXT={admin:'Admin',collection:'Collection',proche:'Proche'};
+function openAccounts(){
+  const d=$('#addSheet');
+  d.innerHTML=`<div class="grab"></div><button class="x" data-close aria-label="Fermer">✕</button><h3 class="t">Comptes</h3><div class="loader" style="min-height:120px"><div class="spin"></div></div>`;
+  open(d); call('listAccounts').then(renderAccounts).catch(err=>toast(err.message,true));
+}
+function renderAccounts(list){
+  const d=$('#addSheet');
+  d.innerHTML=`<div class="grab"></div><button class="x" data-close aria-label="Fermer">✕</button>
+    <h3 class="t">Comptes <span class="cntb">${list.length}</span></h3>
+    <p class="hint" style="text-align:left;margin-bottom:12px">Admin : tout. Collection : coche sa collection, ne voit pas les achats. Proche : signale un cadeau acheté.</p>
+    <button class="big add" id="accNew">＋ Nouveau compte</button>
+    <div class="acclist">${list.map((a,i)=>`<div class="accrow ${a.active?'':'off'}">
+      <div class="avatar" style="background:${color(a.name||a.email)}">${esc(initials(a.name||a.email))}</div>
+      <div class="accinfo"><b>${esc(a.name)}${a.me?' <i>(vous)</i>':''}</b><small>${esc(a.email)}</small>
+        <div class="tags"><span class="tag r-${esc(a.role)}">${esc(ROLE_TXT[a.role]||a.role)}</span>${a.active?'':'<span class="tag">Désactivé</span>'}${a.hasPassword?'':'<span class="tag warn">Mot de passe à définir</span>'}${a.last?`<span class="tag soft">Vu le ${esc(a.last)}</span>`:''}</div></div>
+      <button class="mini" data-acc="${i}" aria-label="Modifier">✏️</button></div>`).join('')}</div>`;
+  $('#accNew').onclick=()=>editAccount(null,list);
+  d.querySelectorAll('[data-acc]').forEach(b=>b.onclick=()=>editAccount(list[+b.dataset.acc],list));
+}
+function editAccount(a,list){
+  const d=$('#addSheet'), isNew=!a; a=a||{name:'',email:'',role:'proche',active:true};
+  d.innerHTML=`<div class="grab"></div><button class="x" data-close aria-label="Fermer">✕</button>
+    <button class="lnk" id="accBack">‹ Tous les comptes</button>
+    <h3 class="t">${isNew?'Nouveau compte':esc(a.name)}</h3>
+    <form id="accF">
+      <label for="aName">Nom</label><input type="text" id="aName" required value="${esc(a.name)}" placeholder="Ex. Mamie">
+      <label for="aEmail">E-mail</label><input type="email" id="aEmail" required value="${esc(a.email)}" placeholder="adresse@exemple.fr">
+      <label for="aRole">Rôle</label><select id="aRole" ${a.me?'disabled':''}>${['admin','collection','proche'].map(r=>`<option value="${r}" ${a.role===r?'selected':''}>${ROLE_TXT[r]}</option>`).join('')}</select>
+      <label class="check"><input type="checkbox" id="aActive" ${a.active?'checked':''} ${a.me?'disabled':''}> Compte actif</label>
+      ${isNew?`<label class="check" style="margin-top:-8px"><input type="checkbox" id="aInvite" checked> Envoyer l’invitation par e-mail</label>`:''}
+      <button class="big add" id="accGo">${isNew?'Créer le compte':'Enregistrer'}</button>
+    </form>
+    ${isNew?'':`<div class="accact">
+      <button class="big ghost" id="accLink">✉️ ${a.hasPassword?'Envoyer un lien « nouveau mot de passe »':'Envoyer l’invitation'}</button>
+      ${a.me?'':`<button class="big danger" id="accDel">Supprimer le compte</button>`}</div>`}
+    <div id="linkBox"></div>`;
+  $('#accBack').onclick=()=>renderAccounts(list);
+  $('#accF').onsubmit=e=>{
+    e.preventDefault(); const b=$('#accGo'); busyBtn(b,true);
+    const p={name:$('#aName').value.trim(),email:$('#aEmail').value.trim(),role:$('#aRole').value,active:$('#aActive').checked,originalEmail:isNew?'':a.email};
+    call('saveAccount',p).then(nl=>{
+      if(isNew&&$('#aInvite').checked){
+        const na=nl.find(x=>x.email===p.email.toLowerCase())||p;
+        return call('sendAccountLink',p.email,true).then(r=>{editAccount(na,nl);showLink(r,na);toast('Compte créé')});
+      }
+      renderAccounts(nl); toast(isNew?'Compte créé':'Compte enregistré');
+    }).catch(err=>{busyBtn(b,false);toast(err.message,true)});
+  };
+  const lk=$('#accLink'); if(lk) lk.onclick=()=>{busyBtn(lk,true,'Envoi…');call('sendAccountLink',a.email,true).then(r=>{busyBtn(lk,false);showLink(r,a)}).catch(err=>{busyBtn(lk,false);toast(err.message,true)})};
+  const del=$('#accDel'); if(del) del.onclick=()=>{
+    if(!del.dataset.ok){del.dataset.ok=1;del.textContent='Confirmer la suppression de '+a.name;return}
+    busyBtn(del,true); call('deleteAccount',a.email).then(nl=>{renderAccounts(nl);toast('Compte supprimé')}).catch(err=>{busyBtn(del,false);toast(err.message,true)});
+  };
+}
+function showLink(r,a){
+  $('#linkBox').innerHTML=`<div class="note ${r.mailed?'':'warn'}">${r.mailed?'✉️ E-mail envoyé à '+esc(a.email)+'.':'⚠️ L’e-mail n’a pas pu être envoyé'+(r.mailError?' ('+esc(r.mailError)+')':'')+'.'}
+    Vous pouvez aussi lui transmettre ce lien (valable ${r.days} jours) :
+    <div class="copy"><input readonly value="${esc(r.url)}" id="lnkIn"><button class="mini" id="lnkCp">Copier</button></div></div>`;
+  $('#lnkCp').onclick=()=>{const i=$('#lnkIn');i.select();(navigator.clipboard?navigator.clipboard.writeText(i.value):Promise.reject()).then(()=>toast('Lien copié')).catch(()=>{document.execCommand('copy');toast('Lien copié')})};
+}
+
+/* ---------- Démarrage ---------- */
 function load(){
-  if(!CODE&&!window.DEMO_API){noAccess('Lien personnel manquant.');return}
-  const ck='amiibo_cache_'+CODE.slice(0,6);
-  const cached=store.get(ck);
+  const link=new URLSearchParams(location.search).get('lien');
+  if(link&&!window.DEMO_API){showSetPassword(link);return}
+  if(!TOKEN&&!window.DEMO_API){showLogin();return}
+  const cached=store.get('amiibo_t')?store.get('amiibo_cache'):null;
   if(cached&&!S.data){try{S.data=JSON.parse(cached);render()}catch(e){}}
-  call('getData').then(d=>{S.data=d;store.set(ck,JSON.stringify(d));if(!document.querySelector('.sheet.on'))render()}).catch(err=>{
-    if(err.auth){store.set(ck,'');noAccess(err.message);return}
+  if(!S.data) $('#app').innerHTML='<div class="loader"><div class="spin"></div>Chargement de la collection…</div>';
+  call('getData').then(d=>{S.data=d;if(store.get('amiibo_t'))store.set('amiibo_cache',JSON.stringify(d));if(!document.querySelector('.sheet.on'))render()}).catch(err=>{
+    if(err.auth){setToken('');S.data=null;showLogin(err.message);return}
     if(S.data){toast(err.message,true);return}
     $('#app').innerHTML=`<div class="empty"><div>😕</div>${esc(err.message)}<br><br><button class="big add" style="max-width:240px;margin:auto" onclick="location.reload()">Réessayer</button></div>`;
   });
 }
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.data&&!document.querySelector('.sheet.on'))call('getData').then(d=>{S.data=d;render()}).catch(()=>{})});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&TOKEN&&S.data&&!document.querySelector('.sheet.on'))call('getData').then(d=>{S.data=d;render()}).catch(err=>{if(err.auth){setToken('');S.data=null;showLogin(err.message)}})});
 load();
 </script>
 </body>
