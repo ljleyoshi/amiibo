@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mes amiibo</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Amiibo">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#4b2fd6">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f4fa; --surface:#fff; --ink:#1b1d2a; --muted:#6b7086; --line:#e4e6f0;
+  --accent:#ff3d68; --accent2:#4b2fd6; --ok:#12b76a; --ok-soft:#e3f8ee; --miss:#c3c7d6;
+  --radius:18px; --shadow:0 6px 20px rgba(30,30,70,.08);
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#11121a; --surface:#1c1e2b; --ink:#f1f2f8; --muted:#9a9fb5; --line:#2c2f40;
+    --ok-soft:#123326; --miss:#454a60; --shadow:0 6px 20px rgba(0,0,0,.35); }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Nunito,system-ui,sans-serif}
+button,input,select{font:inherit;color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px calc(96px + env(safe-area-inset-bottom))}
+
+/* ---- Hero ---- */
+.hero{margin:16px 0 0;padding:22px;border-radius:26px;color:#fff;position:relative;overflow:hidden;
+  background:radial-gradient(120% 140% at 100% 0%,#ff3d68 0%,#8b2fd6 45%,#3a2bc4 100%);box-shadow:0 14px 40px rgba(75,47,214,.35)}
+.hero::after{content:"";position:absolute;inset:auto -40px -60px auto;width:220px;height:220px;border-radius:50%;
+  background:rgba(255,255,255,.08)}
+.hero-top{display:flex;align-items:center;gap:20px;position:relative;z-index:1}
+.ring{flex:none;width:112px;height:112px;position:relative}
+.ring svg{transform:rotate(-90deg)}
+.ring .pct{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-weight:900;font-size:28px;line-height:1}
+.ring .pct small{display:block;font-size:11px;font-weight:700;opacity:.8;letter-spacing:.04em;margin-top:2px}
+.hero h1{margin:0 0 4px;font-size:clamp(20px,4.6vw,30px);font-weight:900;letter-spacing:-.01em}
+.hero p{margin:0;opacity:.9;font-weight:600}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px;position:relative;z-index:1}
+.kpi{background:rgba(255,255,255,.14);border-radius:14px;padding:10px 12px;backdrop-filter:blur(6px)}
+.kpi b{display:block;font-size:22px;font-weight:900}
+.kpi span{font-size:12px;opacity:.85;font-weight:700}
+
+/* ---- Barre d'outils ---- */
+.bar{position:sticky;top:0;z-index:20;margin:0 -16px;padding:12px 16px 8px;background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.row{display:flex;gap:10px;align-items:center}
+.search{flex:1;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0 12px;height:46px}
+.search input{border:0;outline:0;background:transparent;flex:1;min-width:0;font-weight:700}
+.search svg{flex:none;opacity:.5}
+.search input::-webkit-search-cancel-button{-webkit-appearance:none;display:none}
+.clear{border:0;background:none;padding:4px;cursor:pointer;opacity:.5;display:none}
+.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px;margin-top:10px}
+.seg button{flex:1;border:0;background:none;border-radius:10px;padding:8px 6px;font-weight:800;font-size:14px;color:var(--muted);cursor:pointer}
+.seg button.on{background:var(--ink);color:var(--surface)}
+.seg button em{font-style:normal;opacity:.7;font-weight:700;margin-left:4px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 4px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 13px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.chip i{font-style:normal;opacity:.65;margin-left:5px}
+.chip.done::before{content:"★ ";color:#ffc531}
+
+/* ---- Séries ---- */
+.serie{margin-top:22px}
+.shead{display:flex;align-items:flex-end;gap:12px;margin:0 2px 10px}
+.shead h2{margin:0;font-size:19px;font-weight:900;flex:1}
+.shead h2 .star{color:#ffc531}
+.shead .cnt{font-weight:800;color:var(--muted);font-size:14px}
+.prog{height:7px;background:var(--line);border-radius:9px;overflow:hidden;margin:0 2px 12px}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:9px;transition:width .5s}
+.prog.full i{background:linear-gradient(90deg,#12b76a,#5bd88f)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+@media (max-width:560px){.grid{grid-template-columns:repeat(3,1fr);gap:9px}}
+@media (max-width:360px){.grid{grid-template-columns:repeat(2,1fr)}}
+
+.card{position:relative;background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px 10px 12px;cursor:pointer;
+  border:2px solid transparent;transition:transform .15s,border-color .2s;text-align:center;user-select:none}
+.card:active{transform:scale(.97)}
+.card.owned{border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
+.pic{position:relative;aspect-ratio:4/5;border-radius:12px;display:grid;place-items:center;overflow:hidden;
+  background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--accent2) 10%,var(--surface)),var(--surface))}
+.pic img{position:absolute;left:6%;top:12%;width:88%;height:85%;object-fit:contain;object-position:center bottom;transition:filter .3s,opacity .3s}
+.ini{font-weight:900;font-size:26px;color:#fff;width:64%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center}
+.card.missing .pic img{filter:grayscale(1);opacity:.4}
+.card.missing .ini{filter:grayscale(.9);opacity:.45}
+.card.missing{background:color-mix(in srgb,var(--surface) 70%,var(--bg))}
+.nm{margin-top:8px;font-weight:800;font-size:14px;line-height:1.2;min-height:2.4em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card.missing .nm{color:var(--muted)}
+.num{z-index:2;position:absolute;top:8px;left:8px;font-size:11px;font-weight:900;background:var(--bg);color:var(--muted);border-radius:8px;padding:2px 6px}
+.tick{z-index:2;position:absolute;top:6px;right:6px;width:32px;height:32px;border-radius:50%;border:2px solid var(--miss);background:var(--surface);
+  display:grid;place-items:center;cursor:pointer;padding:0;transition:all .2s}
+.tick svg{opacity:0;transition:opacity .2s}
+.card.owned .tick{background:var(--ok);border-color:var(--ok)}
+.card.owned .tick svg{opacity:1}
+.card.busy .tick{animation:pulse .8s infinite}
+.ro .tick{pointer-events:none}
+@keyframes pulse{50%{transform:scale(.85)}}
+@media (max-width:560px){.nm{font-size:12.5px}.tick{width:28px;height:28px}.card{padding:8px 8px 10px}}
+
+.empty{text-align:center;color:var(--muted);padding:60px 20px;font-weight:700}
+.empty div{font-size:44px}
+
+/* ---- Fenêtres ---- */
+.scrim{position:fixed;inset:0;background:rgba(10,10,25,.5);z-index:50;opacity:0;pointer-events:none;transition:opacity .25s}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:50%;bottom:0;transform:translate(-50%,105%);width:min(560px,100%);max-height:92vh;overflow:auto;z-index:60;
+  background:var(--surface);border-radius:26px 26px 0 0;padding:10px 20px calc(24px + env(safe-area-inset-bottom));transition:transform .3s cubic-bezier(.2,.9,.3,1),visibility 0s .3s;
+  visibility:hidden;pointer-events:none}
+.sheet.on{transform:translate(-50%,0);visibility:visible;pointer-events:auto;transition:transform .3s cubic-bezier(.2,.9,.3,1),visibility 0s}
+@media (min-width:720px){.sheet{bottom:50%;border-radius:26px;transform:translate(-50%,60%) scale(.96);opacity:0;transition:transform .25s,opacity .25s,visibility 0s .25s}
+  .sheet.on{transform:translate(-50%,50%) scale(1);opacity:1;transition:transform .25s,opacity .25s,visibility 0s}}
+.grab{width:42px;height:5px;border-radius:5px;background:var(--line);margin:4px auto 14px}
+.x{position:absolute;top:12px;right:14px;border:0;background:var(--bg);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px}
+.dpic{position:relative;width:min(240px,62vw);aspect-ratio:4/5;margin:0 auto;border-radius:20px;display:grid;place-items:center;overflow:hidden;
+  background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--accent2) 14%,var(--surface)),var(--surface))}
+.dpic img{position:absolute;inset:4%;width:92%;height:92%;object-fit:contain}
+.dpic .ini{font-size:56px}
+.dmeta{text-align:center;margin:14px 0 18px}
+.dmeta small{color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:12px}
+.dmeta h3{margin:4px 0 0;font-size:26px;font-weight:900}
+.big{width:100%;border:0;border-radius:16px;padding:15px;font-weight:900;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.big.add{background:var(--ink);color:var(--surface)}
+.big.rm{background:var(--ok-soft);color:var(--ok)}
+.big:disabled{opacity:.6}
+.banner{display:flex;gap:12px;align-items:flex-start;margin:14px 0 0;padding:14px 16px;border-radius:18px;background:color-mix(in srgb,#ffc531 16%,var(--surface));border:1px solid color-mix(in srgb,#ffc531 40%,var(--line));font-size:13px;line-height:1.4;font-weight:600}
+.banner>:first-child{font-size:22px}
+.ro .card.missing .tick{display:none}
+.gbadge{position:absolute;z-index:2;left:50%;transform:translateX(-50%);bottom:6px;white-space:nowrap;font-size:11px;font-weight:900;padding:3px 8px;border-radius:999px;background:#ffc531;color:#3a2a00}
+.gbadge.mine{background:#ff3d68;color:#fff}
+.card.gifted .pic img{opacity:.55}
+.big.gift{background:linear-gradient(135deg,#ff3d68,#ff8a3d);color:#fff}
+.big.gift.confirm{background:linear-gradient(135deg,#12b76a,#0ea5e9)}
+.ginfo{margin-top:10px;text-align:center;font-size:13px;font-weight:700;color:var(--muted)}
+.lnk{border:0;background:none;color:var(--accent);font-weight:800;cursor:pointer;text-decoration:underline;padding:0 2px;font-size:inherit}
+.imgEdit label{font-size:12px;font-weight:800;color:var(--muted);margin-bottom:-4px}
+.seg4 button{font-size:13px;padding:7px 2px}
+@media (max-width:560px){.seg4 button em{display:block;margin:1px 0 0}}
+.kpis.k4{grid-template-columns:repeat(4,1fr)}
+@media (max-width:560px){.kpis.k4{gap:6px}.kpis.k4 .kpi{padding:8px}.kpis.k4 .kpi b{font-size:18px}.kpis.k4 .kpi span{font-size:10.5px}}
+.card.bought{border-color:color-mix(in srgb,#3b82f6 70%,transparent)}
+.card.bought .tick{background:#3b82f6;border-color:#3b82f6}
+.card.bought .tick svg{opacity:1}
+.card.bought .pic img{filter:none;opacity:.85}
+.gbadge.adm{background:#3b82f6;color:#fff}
+.states{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--bg);border-radius:16px;padding:5px}
+.states button{border:0;background:none;border-radius:12px;padding:12px 4px;font-weight:900;font-size:14px;color:var(--muted);cursor:pointer}
+.states button.on.miss{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.states button.on.bought{background:#3b82f6;color:#fff}
+.states button.on.own{background:var(--ok);color:#fff}
+.states button:disabled{opacity:.6}
+.hint{text-align:center;color:var(--muted);font-size:12px;font-weight:700;margin:6px 0 0}
+.links{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.lk{display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;font-weight:800;font-size:14px;color:var(--ink);
+  border:1.5px solid var(--line);border-radius:14px;padding:12px 8px}
+.lk.vinted{color:#09b1ba;border-color:color-mix(in srgb,#09b1ba 40%,var(--line))}
+.lk.ninty{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+
+form label{display:block;font-weight:800;font-size:13px;color:var(--muted);margin:14px 0 6px}
+form input[type=text],form input[type=url],form select{width:100%;height:48px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);padding:0 14px;font-weight:700;outline:0}
+form input:focus,form select:focus{border-color:var(--accent2)}
+.check{display:flex;align-items:center;gap:10px;margin:16px 0 20px;font-weight:800}
+.check input{width:22px;height:22px;accent-color:var(--ok)}
+.imgEdit{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+.imgEdit summary{cursor:pointer;font-weight:800;color:var(--muted);font-size:14px}
+.imgEdit form{display:grid;gap:10px;margin-top:10px}
+.imgEdit input{width:100%;height:46px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);padding:0 14px;font-weight:700;outline:0}
+.imgEdit p{margin:8px 0 0;font-size:12px;color:var(--muted);font-weight:700}
+.sheet h3.t{margin:0 0 4px;font-size:22px;font-weight:900}
+
+.fab{position:fixed;right:max(18px,calc(50% - 572px));bottom:calc(20px + env(safe-area-inset-bottom));z-index:40;width:60px;height:60px;border-radius:50%;border:0;cursor:pointer;
+  background:linear-gradient(135deg,var(--accent),#ff7a3d);color:#fff;box-shadow:0 10px 26px rgba(255,61,104,.45);display:grid;place-items:center}
+.fab[hidden]{display:none}
+.top{position:fixed;left:18px;bottom:calc(26px + env(safe-area-inset-bottom));z-index:40;width:46px;height:46px;border-radius:50%;border:1px solid var(--line);
+  background:var(--surface);box-shadow:var(--shadow);cursor:pointer;display:none;place-items:center}
+
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translate(-50%,20px);background:var(--ink);color:var(--surface);
+  padding:12px 18px;border-radius:14px;font-weight:800;z-index:80;opacity:0;transition:all .25s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast.err{background:#d92d20;color:#fff}
+
+.loader{display:grid;place-items:center;min-height:70vh;gap:14px;color:var(--muted);font-weight:800}
+.spin{width:44px;height:44px;border-radius:50%;border:5px solid var(--line);border-top-color:var(--accent);animation:sp 0.8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.confetti{position:fixed;top:-20px;z-index:90;font-size:22px;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+.foot{text-align:center;color:var(--muted);font-size:12px;font-weight:700;margin-top:34px}
+.foot a{color:inherit}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="loader"><div class="spin"></div>Chargement de la collection…</div></div>
+
+<button class="top" id="toTop" aria-label="Remonter"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
+<button class="fab" id="fab" aria-label="Ajouter un amiibo" hidden><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="detail" role="dialog" aria-modal="true"></div>
+<div class="sheet" id="addSheet" role="dialog" aria-modal="true"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- Réglage : adresse de l'API Apps Script (se termine par /exec) ---------- */
+const API_URL = 'COLLER_ICI_L_URL_DU_SCRIPT';
+
+/* ---------- Code personnel (dans le lien ?k=…) ---------- */
+const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+const CODE=(new URLSearchParams(location.search).get('k')||store.get('amiibo_k')||'').trim();
+if(CODE) store.set('amiibo_k',CODE);
+
+function call(fn){
+  const args=[].slice.call(arguments,1);
+  if(window.DEMO_API) return new Promise((res,rej)=>setTimeout(()=>{try{res(DEMO_API[fn].apply(null,args))}catch(e){rej(e)}},250));
+  return fetch(API_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({k:CODE,a:fn,args})})
+    .then(r=>{if(!r.ok)throw new Error('Serveur indisponible ('+r.status+')');return r.json()},e=>{throw new Error('Pas de connexion au serveur. Vérifiez votre connexion Internet.')})
+    .then(j=>{if(!j.ok){const e=new Error(j.error||'Erreur inconnue');e.auth=j.auth===false;throw e}return j.data});
+}
+
+const S={data:null,filter:'all',q:'',serie:'all',busy:new Set()};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+const COLORS=['#ff3d68','#4b2fd6','#ff8a3d','#12b76a','#0ea5e9','#e11d9b','#7c3aed','#f59e0b'];
+function color(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))>>>0;return COLORS[h%COLORS.length]}
+function initials(n){return n.replace(/[^\p{L}\p{N} ]/gu,'').split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase()||'?'}
+function small(url){return url.replace(/=s\d+(?=\?|$)/,'=s400')}
+function picHTML(it,big){
+  const fb=`<div class="ini" style="background:${color(it.name)}">${esc(initials(it.name))}</div>`;
+  if(!it.img) return fb;
+  const src=big?it.img:small(it.img);
+  return `<img loading="lazy" alt="" src="${esc(src)}" data-full="${esc(it.img)}" onerror="imgErr(this)">`;
+}
+function imgErr(img){
+  if(img.dataset.full&&img.src!==img.dataset.full){img.src=img.dataset.full;img.dataset.full='';return}
+  const n=img.closest('[data-name]');const name=n?n.dataset.name:'?';
+  img.outerHTML=`<div class="ini" style="background:${color(name)}">${esc(initials(name))}</div>`;
+}
+function vintedUrl(it){return it.vinted||('https://www.vinted.fr/catalog?search_text='+encodeURIComponent(it.vq||('amiibo '+it.name)))}
+function who(){const m=/amiibos?\s+(.+)$/i.exec(S.data.title);return m?m[1].trim():'lui'}
+const isReader=()=>S.data.role==='read', isAdmin=()=>S.data.role==='admin', canToggle=()=>S.data.role==='admin'||S.data.role==='edit';
+function all(){return S.data.series.flatMap(s=>s.items.map(i=>Object.assign(i,{serie:s.name})))}
+function find(row){return all().find(i=>i.row===row)}
+
+/* ---------- Rendu ---------- */
+function render(){
+  const d=S.data, items=all();
+  const owned=items.filter(i=>i.owned).length, total=items.length, pct=total?Math.round(owned*100/total):0;
+  const full=d.series.filter(s=>s.items.length&&s.items.every(i=>i.owned)).length;
+  const withItems=d.series.filter(s=>s.items.length).length;
+  const C=2*Math.PI*48;
+  const q=norm(S.q.trim());
+  const inF=(i,f)=>f==='all'||(f==='own'?i.owned:f==='bought'?(!i.owned&&!!i.gift):(f==='gift'||f==='miss')?(!i.owned&&!(i.gift&&(f==='gift'||isAdmin()))):true);
+  const match=i=>inF(i,S.filter)&&(!q||norm(i.name).includes(q)||String(i.num)===q);
+
+  let body='';
+  d.series.forEach((s,si)=>{
+    if(S.serie!=='all'&&S.serie!==si) return;
+    const list=s.items.filter(match);
+    if(!list.length&&(q||S.filter!=='all'||!s.items.length&&S.serie==='all')) return;
+    const o=s.items.filter(i=>i.owned).length, n=s.items.length, done=n&&o===n;
+    body+=`<section class="serie"><div class="shead"><h2>${esc(s.name)} ${done?'<span class="star">★</span>':''}</h2><span class="cnt">${o} / ${n}</span></div>
+      <div class="prog ${done?'full':''}"><i style="width:${n?o*100/n:0}%"></i></div>
+      <div class="grid">${list.map(card).join('')||'<div class="empty" style="grid-column:1/-1;padding:20px">Aucun amiibo pour l’instant.</div>'}</div></section>`;
+  });
+  if(!body) body=`<div class="empty"><div>🔍</div>Aucun amiibo ne correspond.</div>`;
+
+  const cnt=f=>items.filter(i=>inF(i,f)).length;
+  const R=isReader(), A=isAdmin(), N=esc(who());
+  $('#app').innerHTML=`
+  <header class="hero">
+    <div class="hero-top">
+      <div class="ring"><svg width="112" height="112" viewBox="0 0 112 112"><circle cx="56" cy="56" r="48" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="11"/>
+        <circle cx="56" cy="56" r="48" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct/100)}" style="transition:stroke-dashoffset .6s"/></svg>
+        <div class="pct"><div>${pct}%<small>COMPLÉTÉ</small></div></div></div>
+      <div><h1>${esc(d.title.replace(/^Liste\s+/i,'Collection ').replace(/amiibos/i,'amiibo'))}</h1><p>${owned} amiibo sur ${total}</p></div>
+    </div>
+    <div class="kpis ${A?'k4':''}">
+      <div class="kpi"><b>${owned}</b><span>${R?'Il les a':'Possédés'}</span></div>
+      ${A?`<div class="kpi"><b>${cnt('bought')}</b><span>Achetés</span></div>`:''}
+      <div class="kpi"><b>${R?cnt('gift'):cnt('miss')}</b><span>${R?'À offrir':'Manquants'}</span></div>
+      <div class="kpi"><b>${full}/${withItems}</b><span>Séries complètes</span></div>
+    </div>
+  </header>
+  ${R?`<div class="banner"><span>🎁</span><div><b>Envie d’offrir un amiibo à ${N} ?</b> Choisissez-en un dans « À offrir », achetez-le, puis appuyez sur « Je l’ai acheté ».</div></div>`:''}
+  <div class="bar">
+    <div class="row"><label class="search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Rechercher un amiibo…" value="${esc(S.q)}" autocomplete="off"><button class="clear" id="clr" aria-label="Effacer">✕</button></label></div>
+    <div class="seg ${A?'seg4':''}">${(R?[['all','Tous'],['own','Il les a'],['gift','À offrir']]:A?[['all','Tous'],['own','Collection'],['bought','Achetés'],['miss','Manquants']]:[['all','Tous'],['own','Je les ai'],['miss','Manquants']]).map(([k,l])=>`<button data-f="${k}" class="${S.filter===k?'on':''}">${l}<em>${cnt(k)}</em></button>`).join('')}</div>
+    <div class="chips"><button class="chip ${S.serie==='all'?'on':''}" data-s="all">Toutes les séries</button>${d.series.map((s,i)=>{
+      const o=s.items.filter(x=>x.owned).length,n=s.items.length;
+      return `<button class="chip ${S.serie===i?'on':''} ${n&&o===n?'done':''}" data-s="${i}">${esc(s.name)}<i>${o}/${n}</i></button>`}).join('')}</div>
+  </div>
+  <main class="${canToggle()?'':'ro'}">${body}</main>
+  <p class="foot">Bonjour ${esc(d.user||'')} · ${A?'super utilisateur':d.role==='edit'?'collection':'mode proche'}${d.sheetUrl?` · <a href="${esc(d.sheetUrl)}" target="_blank">Ouvrir le Google Sheet</a>`:''}</p>`;
+
+  $('#fab').hidden=!A;
+  const qi=$('#q'); $('#clr').style.display=S.q?'block':'none';
+  qi.addEventListener('input',()=>{S.q=qi.value;const p=qi.selectionStart;render();const n=$('#q');n.focus();n.setSelectionRange(p,p)});
+  $('#clr').onclick=e=>{e.preventDefault();S.q='';render()};
+  document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{S.filter=b.dataset.f;render()});
+  document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{S.serie=b.dataset.s==='all'?'all':+b.dataset.s;render();window.scrollTo({top:$('.bar').offsetTop,behavior:'smooth'})});
+  const on=document.querySelector('.chip.on'); if(on) on.scrollIntoView({inline:'center',block:'nearest'});
+}
+function card(i){
+  return `<div class="card ${i.owned?'owned':'missing'} ${i.gift&&!i.owned?(isAdmin()?'bought':'gifted'):''} ${S.busy.has(i.row)?'busy':''}" data-row="${i.row}" data-name="${esc(i.name)}" role="button" tabindex="0">
+    ${i.num!==''?`<span class="num">${esc(i.num)}</span>`:''}
+    <button class="tick" data-tick="${i.row}" aria-label="${i.owned?'Retirer':'Ajouter'} ${esc(i.name)}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>
+    <div class="pic">${picHTML(i)}${i.gift&&!i.owned?`<span class="gbadge ${isAdmin()?'adm':i.gift.mine?'mine':''}">🎁 ${isAdmin()?'Acheté':i.gift.mine?'Acheté par vous':'Déjà acheté'}</span>`:''}</div><div class="nm">${esc(i.name)}</div></div>`;
+}
+
+/* ---------- Actions ---------- */
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-tick]'); if(t){e.stopPropagation();toggle(+t.dataset.tick);return}
+  const c=e.target.closest('.card'); if(c) openDetail(+c.dataset.row);
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') closeAll();
+  if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('card')){e.preventDefault();openDetail(+e.target.dataset.row)}
+});
+
+function toggle(row){
+  if(!canToggle()||S.busy.has(row)) return;
+  const it=find(row); if(!it) return;
+  const serie=S.data.series.find(s=>s.items.includes(it));
+  const val=!it.owned; it.owned=val; S.busy.add(row); render(); refreshDetail(row);
+  if(val&&navigator.vibrate) navigator.vibrate(15);
+  call('setOwned',row,it.name,val).then(()=>{
+    S.busy.delete(row); render(); refreshDetail(row);
+    if(val&&serie.items.every(i=>i.owned)){confetti();toast('★ Série « '+serie.name+' » complète !')}
+    else toast(val?it.name+' ajouté à la collection':it.name+' retiré de la collection');
+  }).catch(err=>{it.owned=!val;S.busy.delete(row);render();refreshDetail(row);toast(err.message,true)});
+}
+
+function openDetail(row){ const d=$('#detail'); d.dataset.row=row; refreshDetail(row,true); open(d) }
+function refreshDetail(row,force){
+  const d=$('#detail'); if(!force&&(!d.classList.contains('on')||+d.dataset.row!==row)) return;
+  const it=find(row); if(!it) return; const A=isAdmin(), ed=S.data.role==='edit', busy=S.busy.has(row);
+  const st=it.owned?'own':it.gift?'bought':'miss';
+  d.innerHTML=`<div class="grab"></div><button class="x" data-close aria-label="Fermer">✕</button>
+    <div class="dpic" data-name="${esc(it.name)}">${picHTML(it,true)}</div>
+    <div class="dmeta"><small>${esc(it.serie)}${it.num!==''?' · N° '+esc(it.num):''}</small><h3>${esc(it.name)}</h3></div>
+    ${A?`<div class="states">${[['miss','Manquant'],['bought','🎁 Acheté'],['own','✓ Collection']].map(([k,l])=>`<button data-st="${k}" class="${st===k?'on '+k:''}" ${busy?'disabled':''}>${l}</button>`).join('')}</div>
+       <p class="hint">${st==='own'?'Dans la collection de '+esc(who()):st==='bought'?'Acheté, en attente d’être offert':'Ni acheté, ni dans la collection'}</p>`
+    :ed?`<button class="big ${it.owned?'rm':'add'}" id="dTog" ${busy?'disabled':''}>${it.owned?'✓ Dans la collection':'＋ Je l’ai !'}</button>
+       <p class="hint">${it.owned?'Appuyer pour le retirer de la collection':'Appuyer pour l’ajouter à la collection'}</p>`
+       :giftBlock(it,busy)}
+    ${A&&it.gift?`<div class="ginfo">🎁 Acheté par <b>${esc(it.gift.mine?'vous':it.gift.by)}</b> le ${esc(it.gift.date)}${it.owned?'':' <button class="lnk" id="gCancel">Annuler</button>'}</div>`:''}
+    <div class="links">
+      ${it.nintendo?`<a class="lk ninty" href="${esc(it.nintendo)}" target="_blank" rel="noopener">🛒 ${esc(it.shop||'Boutique')}</a>`:`<a class="lk ninty" href="https://www.google.com/search?q=${encodeURIComponent('amiibo '+it.name+' '+it.serie)}" target="_blank" rel="noopener">🔎 Rechercher</a>`}
+      <a class="lk vinted" href="${esc(vintedUrl(it))}" target="_blank" rel="noopener">${it.vinted?'🏷️ Annonce Vinted':'🏷️ Chercher sur Vinted'}</a>
+    </div>
+    ${A?`<details class="imgEdit" ${it.img?'':'open'}><summary>✏️ Modifier l’image ou la recherche Vinted</summary>
+      <form id="imgForm"><label>Lien de l’image</label><input type="url" id="imgUrl" placeholder="https://…" value="${esc(it.img)}">
+      <label>Recherche Vinted</label><input type="text" id="vqIn" placeholder="${esc('amiibo '+it.name)}" value="${esc(it.vq||'')}">
+      <button class="big add" id="imgGo">Enregistrer</button></form>
+      <p>Astuce : sur Google Images, appui long sur l’image › « Copier l’adresse de l’image ».</p></details>`:''}`;
+  const b=$('#dTog'); if(b) b.onclick=()=>toggle(row);
+  const g=$('#gBuy'); if(g) g.onclick=()=>{
+    if(!g.dataset.ok){g.dataset.ok=1;g.innerHTML='Confirmer : je l’ai acheté ✔';g.classList.add('confirm');return}
+    giftCall('reserveGift',row,it,'Merci ! C’est noté 🎁');
+  };
+  const gc=$('#gCancel'); if(gc) gc.onclick=()=>giftCall('cancelGift',row,it,'Achat annulé');
+  d.querySelectorAll('[data-st]').forEach(b=>b.onclick=()=>{
+    const v=b.dataset.st; if(v===st) return;
+    S.busy.add(row); refreshDetail(row);
+    call('adminSetState',row,it.name,v).then(nd=>{S.busy.delete(row);S.data=nd;render();refreshDetail(row,true);
+      const ser=S.data.series.find(x=>x.name===it.serie);
+      if(v==='own'&&ser&&ser.items.every(i=>i.owned)){confetti();toast('★ Série « '+ser.name+' » complète !')}
+      else toast(v==='own'?'Ajouté à la collection':v==='bought'?'Marqué comme acheté 🎁':'Marqué comme manquant')})
+      .catch(err=>{S.busy.delete(row);refreshDetail(row);toast(err.message,true)});
+  });
+  const f=$('#imgForm'); if(f) f.onsubmit=e=>{
+    e.preventDefault(); const url=$('#imgUrl').value.trim(), vq=$('#vqIn').value.trim(), go=$('#imgGo'); go.disabled=true; go.textContent='Enregistrement…';
+    call('setExtras',row,it.name,url,vq).then(()=>{it.img=url;it.vq=vq;render();refreshDetail(row);toast('Modifications enregistrées')})
+      .catch(err=>{go.disabled=false;go.textContent='Enregistrer';toast(err.message,true)});
+  };
+}
+
+function giftBlock(it,busy){
+  const N=esc(who());
+  if(it.owned) return `<div class="big rm" style="cursor:default">✓ ${N} l’a déjà</div>`;
+  if(it.gift&&it.gift.mine) return `<div class="big gift" style="cursor:default">🎁 Vous l’avez acheté pour ${N}</div>
+    <p class="hint">Vous vous êtes trompé ? <button class="lnk" id="gCancel">Annuler l’achat</button></p>`;
+  if(it.gift) return `<div class="big add" style="cursor:default;opacity:.6">🎁 Déjà acheté par un autre proche</div><p class="hint">Choisissez-en un autre dans « À offrir ».</p>`;
+  return `<button class="big gift" id="gBuy" ${busy?'disabled':''}>🎁 Je l’ai acheté pour ${N}</button>
+    <p class="hint">À faire une fois l’achat fait : les autres proches verront qu’il est pris.</p>`;
+}
+function giftCall(fn,row,it,msg){
+  S.busy.add(row); refreshDetail(row);
+  call(fn,row,it.name).then(d=>{S.busy.delete(row);S.data=d;render();refreshDetail(row,true);toast(msg)})
+    .catch(err=>{S.busy.delete(row);refreshDetail(row);toast(err.message,true)});
+}
+
+function openAdd(){
+  const d=$('#addSheet'), ss=S.data.series;
+  const cur=S.serie!=='all'?ss[S.serie].name:'';
+  d.innerHTML=`<div class="grab"></div><button class="x" data-close aria-label="Fermer">✕</button>
+  <h3 class="t">Ajouter un amiibo</h3>
+  <form id="addForm">
+    <label for="fSerie">Série</label>
+    <select id="fSerie">${ss.map(s=>`<option ${s.name===cur?'selected':''}>${esc(s.name)}</option>`).join('')}<option value="__new">＋ Nouvelle série…</option></select>
+    <div id="newWrap" hidden><label for="fNew">Nom de la nouvelle série</label><input type="text" id="fNew" placeholder="Ex. Zelda Tears of the Kingdom"></div>
+    <label for="fName">Nom de l’amiibo</label><input type="text" id="fName" required placeholder="Ex. Link">
+    <label for="fImg">Lien de l’image (facultatif)</label><input type="url" id="fImg" placeholder="https://…">
+    <label for="fNin">Lien boutique Nintendo (facultatif)</label><input type="url" id="fNin" placeholder="https://store.nintendo.fr/…">
+    <label for="fVin">Lien Vinted (facultatif)</label><input type="url" id="fVin" placeholder="https://www.vinted.fr/…">
+    <label for="fVq">Recherche Vinted (facultatif)</label><input type="text" id="fVq" placeholder="Par défaut : amiibo + nom">
+    <label class="check"><input type="checkbox" id="fOwn"> Je l’ai déjà</label>
+    <button class="big add" id="fGo">Ajouter à la liste</button>
+  </form>`;
+  const sel=$('#fSerie'); sel.onchange=()=>{$('#newWrap').hidden=sel.value!=='__new'};
+  $('#addForm').onsubmit=e=>{
+    e.preventDefault();
+    const isNew=sel.value==='__new', newS=$('#fNew').value.trim();
+    if(isNew&&!newS){toast('Indiquez le nom de la série',true);return}
+    const p={series:isNew?'':sel.value,newSeries:isNew?newS:'',name:$('#fName').value.trim(),image:$('#fImg').value.trim(),
+      nintendo:$('#fNin').value.trim(),vinted:$('#fVin').value.trim(),vq:$('#fVq').value.trim(),owned:$('#fOwn').checked};
+    const go=$('#fGo'); go.disabled=true; go.textContent='Ajout en cours…';
+    call('addAmiibo',p).then(data=>{S.data=data;closeAll();render();toast(p.name+' ajouté !')})
+      .catch(err=>{go.disabled=false;go.textContent='Ajouter à la liste';toast(err.message,true)});
+  };
+  open(d); setTimeout(()=>$('#fName').focus(),300);
+}
+
+function open(el){closeAll();$('#scrim').classList.add('on');el.classList.add('on');document.body.style.overflow='hidden'}
+function closeAll(){document.querySelectorAll('.sheet.on').forEach(s=>s.classList.remove('on'));$('#scrim').classList.remove('on');document.body.style.overflow=''}
+$('#scrim').onclick=closeAll;
+document.addEventListener('click',e=>{if(e.target.closest('[data-close]'))closeAll()});
+$('#fab').onclick=openAdd;
+$('#toTop').onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
+window.addEventListener('scroll',()=>{$('#toTop').style.display=scrollY>600?'grid':'none'},{passive:true});
+
+// glisser vers le bas pour fermer (mobile)
+document.querySelectorAll('.sheet').forEach(sh=>{
+  let y0=null;
+  sh.addEventListener('touchstart',e=>{y0=sh.scrollTop<=0?e.touches[0].clientY:null},{passive:true});
+  sh.addEventListener('touchend',e=>{if(y0!==null&&e.changedTouches[0].clientY-y0>90)closeAll();y0=null});
+});
+
+let tt; function toast(m,err){const t=$('#toast');t.textContent=m;t.className='toast on'+(err?' err':'');clearTimeout(tt);tt=setTimeout(()=>t.className='toast'+(err?' err':''),err?4200:2200)}
+function confetti(){const e=['⭐','🎉','✨','🌟','🍄'];for(let i=0;i<36;i++){const s=document.createElement('span');s.className='confetti';s.textContent=e[i%e.length];
+  s.style.left=Math.random()*100+'vw';s.style.animationDuration=(1.6+Math.random()*1.6)+'s';s.style.animationDelay=Math.random()*.4+'s';document.body.appendChild(s);setTimeout(()=>s.remove(),3800)}}
+
+/* ---------- Démarrage ---------- */
+function noAccess(msg){
+  $('#app').innerHTML=`<div class="empty"><div>🔒</div><b>${esc(msg)}</b><br><br>Ouvrez le lien personnel qu’on vous a envoyé (il contient <code>?k=</code>).</div>`;
+}
+function load(){
+  if(!CODE&&!window.DEMO_API){noAccess('Lien personnel manquant.');return}
+  const ck='amiibo_cache_'+CODE.slice(0,6);
+  const cached=store.get(ck);
+  if(cached&&!S.data){try{S.data=JSON.parse(cached);render()}catch(e){}}
+  call('getData').then(d=>{S.data=d;store.set(ck,JSON.stringify(d));if(!document.querySelector('.sheet.on'))render()}).catch(err=>{
+    if(err.auth){store.set(ck,'');noAccess(err.message);return}
+    if(S.data){toast(err.message,true);return}
+    $('#app').innerHTML=`<div class="empty"><div>😕</div>${esc(err.message)}<br><br><button class="big add" style="max-width:240px;margin:auto" onclick="location.reload()">Réessayer</button></div>`;
+  });
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.data&&!document.querySelector('.sheet.on'))call('getData').then(d=>{S.data=d;render()}).catch(()=>{})});
+load();
+</script>
+</body>
+</html>
