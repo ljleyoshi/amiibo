@@ -49,6 +49,7 @@ let subs = [];
 let C = { meta: {}, series: new Map(), amiibos: new Map(), gifts: new Map() };
 let loaded = {};
 let pending = false;
+let retried = false;   // une seule nouvelle tentative après rafraîchissement du jeton
 
 function stop() {
   subs.forEach(u => { try { u(); } catch (e) { } });
@@ -101,7 +102,11 @@ function listen(ref, key, onDoc) {
     loaded[key] = true; schedule();
   }, err => {
     console.error(key, err);
-    if (err.code === 'permission-denied') { UI.noAccess(me ? me.email : ''); stop(); }
+    if (err.code === 'permission-denied') {
+      const u = auth.currentUser;
+      if (u && !retried) { retried = true; u.getIdToken(true).then(() => handleUser(u)).catch(() => UI.noAccess(lower(u.email))); stop(); return; }
+      UI.noAccess(me ? me.email : ''); stop();
+    }
     else UI.toast('Connexion perdue, nouvel essai…', true);
   }));
 }
@@ -113,6 +118,11 @@ async function handleUser(user) {
   if (!user.emailVerified) { UI.verify(user.email); return; }
   const email = lower(user.email);
   UI.loading();
+  // Après la validation de l'e-mail, l'ancien jeton peut encore dire « non vérifié » : on le rafraîchit
+  try {
+    const tok = await user.getIdTokenResult();
+    if (!tok.claims.email_verified) await user.getIdToken(true);
+  } catch (e) { console.error(e); }
   let member = null;
   try {
     const snap = await getDoc(doc(db, 'members', email));
