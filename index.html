@@ -320,7 +320,9 @@ function render(){
   });
   if(!body) body=`<div class="empty"><div>🔍</div>Aucun amiibo ne correspond.</div>`;
 
-  const cnt=f=>items.filter(i=>inF(i,f)).length;
+  const scope=S.serie==='all'||!d.series[S.serie]?items:d.series[S.serie].items;   // compteurs des filtres : série sélectionnée
+  const cnt=f=>scope.filter(i=>inF(i,f)).length;
+  const cntAll=f=>items.filter(i=>inF(i,f)).length;
   const R=isReader(), A=isAdmin(), N=esc(who());
   $('#app').innerHTML=`
   <header class="hero">
@@ -333,8 +335,8 @@ function render(){
     </div>
     <div class="kpis ${A?'k4':''}">
       <div class="kpi"><b>${owned}</b><span>${R?'Il les a':'Possédés'}</span></div>
-      ${A?`<div class="kpi"><b>${cnt('bought')}</b><span>Achetés</span></div>`:''}
-      <div class="kpi"><b>${R?cnt('gift'):cnt('miss')}</b><span>${R?'À offrir':'Manquants'}</span></div>
+      ${A?`<div class="kpi"><b>${cntAll('bought')}</b><span>Achetés</span></div>`:''}
+      <div class="kpi"><b>${R?cntAll('gift'):cntAll('miss')}</b><span>${R?'À offrir':'Manquants'}</span></div>
       <div class="kpi"><b>${full}/${withItems}</b><span>Séries complètes</span></div>
     </div>
   </header>
