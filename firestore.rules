@@ -61,6 +61,14 @@ service cloud.firestore {
       allow update: if isAdmin();
     }
 
+    // Adresses autorisées à créer leur mot de passe : identifiant = SHA-256 de l'e-mail.
+    // Lecture d'un document précis autorisée (il faut connaître l'adresse), liste interdite.
+    match /invites/{hash} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if isAdmin();
+    }
+
     match /members/{mail} {
       allow read: if isAdmin() || (signedIn() && mail == myEmail());
       allow create, delete: if isAdmin();

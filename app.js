@@ -40,6 +40,20 @@ if (EMU) {
 }
 
 const siteUrl = () => location.origin + location.pathname;
+// Liste des adresses invitées : on ne stocke qu'une empreinte SHA-256 de l'e-mail (lisible seulement si on connaît l'adresse)
+async function emailHash(email) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(email || '').trim().toLowerCase()));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+async function syncInvites() {   // admin : s'assure que chaque compte de la liste peut créer son mot de passe
+  try {
+    const snap = await getDocs(collection(db, 'members'));
+    const b = writeBatch(db);
+    for (const d of snap.docs) b.set(doc(db, 'invites', await emailHash(d.id)), { ok: true });
+    b.set(doc(db, 'invites', await emailHash(OWNER_EMAIL)), { ok: true });
+    await b.commit();
+  } catch (e) { console.error('invites', e); }
+}
 const lower = s => String(s || '').trim().toLowerCase();
 const fail = (msg, code) => { const e = new Error(msg); if (code) e.code = code; throw e; };
 
@@ -133,6 +147,7 @@ async function handleUser(user) {
   if (!ROLE_UI[role]) { UI.noAccess(email); return; }
   me = { email, role, name: (member && member.name) || (email === OWNER_EMAIL ? 'Laurent' : email) };
   if (member) updateDoc(doc(db, 'members', email), { lastLogin: serverTimestamp(), uid: user.uid }).catch(() => { });
+  if (role === 'admin' && !sessionStorage.getItem('invitesSynced')) { sessionStorage.setItem('invitesSynced', '1'); syncInvites(); }
   listen(doc(db, 'meta', 'config'), 'meta');
   listen(collection(db, 'series'), 'series');
   listen(collection(db, 'amiibos'), 'amiibos');
@@ -150,6 +165,9 @@ window.API = {
     await signInWithEmailAndPassword(auth, lower(email), password);
   },
   async signup(email, password) {
+    let invited = false;
+    try { invited = (await getDoc(doc(db, 'invites', await emailHash(email)))).exists(); } catch (e) { console.error(e); }
+    if (!invited) fail('Cette adresse n’est pas autorisée. Demandez à l’administrateur de vous créer un compte avec cette adresse.');
     const cred = await createUserWithEmailAndPassword(auth, lower(email), password);
     await sendEmailVerification(cred.user, { url: siteUrl() });
     UI.verify(cred.user.email);
@@ -273,7 +291,10 @@ window.API = {
     if (p.isNew) {
       const ex = await getDoc(ref);
       if (ex.exists()) fail('Un compte existe déjà avec cette adresse.');
-      await setDoc(ref, { name, role: p.role, active: p.active !== false, createdAt: serverTimestamp() });
+      const b = writeBatch(db);
+      b.set(ref, { name, role: p.role, active: p.active !== false, createdAt: serverTimestamp() });
+      b.set(doc(db, 'invites', await emailHash(email)), { ok: true });
+      await b.commit();
     } else {
       await updateDoc(ref, { name, role: p.role, active: p.active !== false });
     }
@@ -283,7 +304,10 @@ window.API = {
     requireRole('admin');
     email = lower(email);
     if (email === me.email || email === OWNER_EMAIL) fail('Vous ne pouvez pas supprimer ce compte.');
-    await deleteDoc(doc(db, 'members', email));
+    const b = writeBatch(db);
+    b.delete(doc(db, 'members', email));
+    b.delete(doc(db, 'invites', await emailHash(email)));
+    await b.commit();
     return window.API.listAccounts();
   },
 
@@ -301,7 +325,10 @@ window.API = {
           ops.push(['meta/config', seed.meta || {}]);
           seed.series.forEach(s => ops.push(['series/' + s.id, { name: s.name, order: s.order }]));
           seed.amiibos.forEach(a => { const { id, ...rest } = a; ops.push(['amiibos/' + id, rest]); });
-          (seed.members || []).forEach(m => ops.push(['members/' + lower(m.email), { name: m.name, role: m.role, active: m.active !== false, createdAt: serverTimestamp() }]));
+          for (const m of (seed.members || [])) {
+            ops.push(['members/' + lower(m.email), { name: m.name, role: m.role, active: m.active !== false, createdAt: serverTimestamp() }]);
+            ops.push(['invites/' + await emailHash(m.email), { ok: true }]);
+          }
           const gifts = (seed.gifts || []).map(g => ['gifts/' + g.amiiboId, { by: lower(g.by), byName: g.byName || '', at: g.at ? new Date(g.at) : serverTimestamp(), name: g.name || '', serie: g.serie || '' }]);
           for (const list of [ops, gifts]) {          // les cadeaux après les amiibo
             for (let i = 0; i < list.length; i += 400) {
