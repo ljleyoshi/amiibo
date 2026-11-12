@@ -1,0 +1,72 @@
+rules_version = '2';
+
+// Règles de sécurité — Collection amiibo
+// Rôles (collection « members », identifiant = e-mail en minuscules) :
+//   admin      : tout voir et tout modifier, gérer les comptes
+//   collection : voit la collection et coche / décoche « owned » uniquement, ne voit pas les cadeaux
+//   proche     : voit la collection, signale un cadeau acheté et peut annuler le sien
+// Le propriétaire (ci-dessous) est toujours admin, même sans fiche dans « members ».
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    function myEmail() {
+      return request.auth.token.email.lower();
+    }
+    function isOwner() {
+      return signedIn() && myEmail() == 'l.babindelignac@gmail.com';
+    }
+    function memberPath() {
+      return /databases/$(database)/documents/members/$(myEmail());
+    }
+    function role() {
+      return isOwner() ? 'admin'
+        : (signedIn() && exists(memberPath()) && get(memberPath()).data.active == true
+            ? get(memberPath()).data.role : 'none');
+    }
+    function isAdmin() { return role() == 'admin'; }
+    function isMember() { return role() in ['admin', 'collection', 'proche']; }
+
+    match /meta/{docId} {
+      allow read: if isMember();
+      allow write: if isAdmin();
+    }
+
+    match /series/{id} {
+      allow read: if isMember();
+      allow write: if isAdmin();
+    }
+
+    match /amiibos/{id} {
+      allow read: if isMember();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (role() == 'collection'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['owned'])
+            && request.resource.data.owned is bool);
+    }
+
+    // Un seul cadeau par amiibo : l'identifiant du document = identifiant de l'amiibo
+    match /gifts/{amiiboId} {
+      allow read: if role() in ['admin', 'proche'];
+      allow create: if role() in ['admin', 'proche']
+        && request.resource.data.by == myEmail()
+        && request.resource.data.keys().hasOnly(['by', 'byName', 'at', 'name', 'serie'])
+        && existsAfter(/databases/$(database)/documents/amiibos/$(amiiboId))
+        && getAfter(/databases/$(database)/documents/amiibos/$(amiiboId)).data.owned == false;
+      allow delete: if isAdmin() || (role() == 'proche' && resource.data.by == myEmail());
+      allow update: if isAdmin();
+    }
+
+    match /members/{mail} {
+      allow read: if isAdmin() || (signedIn() && mail == myEmail());
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (signedIn() && mail == myEmail()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin', 'uid']));
+    }
+  }
+}

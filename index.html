@@ -156,6 +156,10 @@ button,input,select{font:inherit;color:inherit}
 .states button:disabled{opacity:.6}
 .mebtn{position:absolute;top:0;right:0;width:42px;height:42px;border-radius:50%;border:2px solid rgba(255,255,255,.7);color:#fff;font-weight:900;cursor:pointer;z-index:2}
 .hero-top{padding-right:46px}
+.sep{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;font-weight:800;margin:18px 0 0}
+.sep::before,.sep::after{content:"";flex:1;height:1px;background:var(--line)}
+.msgbox{background:var(--surface);border-radius:12px;padding:10px 12px;margin:10px 0;font-weight:600;font-size:13px;user-select:text}
+.copy .big{margin:0}
 .dot-n{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:#ff3d68;color:#fff;font-size:12px;font-weight:900;vertical-align:middle}
 .dot-n.abs{position:absolute;top:-6px;right:-6px;border:2px solid #fff}
 .tag.req{background:#ff3d68;color:#fff}
@@ -244,22 +248,24 @@ form input:focus,form select:focus{border-color:var(--accent2)}
 <div class="toast" id="toast"></div>
 
 <script>
-/* ---------- Réglage : adresse de l'API Apps Script (se termine par /exec) ---------- */
-const API_URL = 'https://script.google.com/macros/s/AKfycbxKtmza_ypFP42FXAaNnDxKsl984pEBeroPEIv4RF2wukZV8F-XXnPTZvLtK9W9Yk24/exec';
-
-/* ---------- Session (jeton de connexion) ---------- */
+/* ---------- Accès aux données : implémenté par le module Firebase (window.API) ---------- */
 const mk=t=>({get:k=>{try{return t().getItem(k)}catch(e){return null}},set:(k,v)=>{try{v==null||v===''?t().removeItem(k):t().setItem(k,v)}catch(e){}}});
-const store=mk(()=>localStorage), sstore=mk(()=>sessionStorage);
-let TOKEN=sstore.get('amiibo_t')||store.get('amiibo_t')||'';
-function setToken(t,remember){TOKEN=t||'';store.set('amiibo_t',remember&&t?t:'');sstore.set('amiibo_t',t||'');if(!t)store.set('amiibo_cache','')}
-store.set('amiibo_k','');   // ancien système de liens à code : supprimé
-
+const store=mk(()=>localStorage);
+['amiibo_t','amiibo_k','amiibo_cache'].forEach(k=>store.set(k,''));   // anciennes versions
 function call(fn){
   const args=[].slice.call(arguments,1);
   if(window.DEMO_API) return new Promise((res,rej)=>setTimeout(()=>{try{res(DEMO_API[fn].apply(null,args))}catch(e){rej(e)}},250));
-  return fetch(API_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({t:TOKEN,a:fn,args})})
-    .then(r=>{if(!r.ok)throw new Error('Serveur indisponible ('+r.status+')');return r.json()},e=>{throw new Error('Pas de connexion au serveur. Vérifiez votre connexion Internet.')})
-    .then(j=>{if(!j.ok){const e=new Error(j.error||'Erreur inconnue');e.auth=j.auth===false;throw e}return j.data});
+  if(!window.API||!API[fn]) return Promise.reject(new Error('Application en cours de chargement, réessayez.'));
+  return Promise.resolve().then(()=>API[fn].apply(null,args)).catch(e=>{throw new Error(frErr(e))});
+}
+function frErr(e){
+  const c=(e&&e.code)||'';
+  const M={'auth/invalid-credential':'E-mail ou mot de passe incorrect.','auth/wrong-password':'E-mail ou mot de passe incorrect.','auth/user-not-found':'E-mail ou mot de passe incorrect.',
+    'auth/invalid-email':'Adresse e-mail invalide.','auth/email-already-in-use':'Un compte existe déjà avec cette adresse : utilisez « Se connecter » ou « Mot de passe oublié ».',
+    'auth/weak-password':'Mot de passe trop faible (8 caractères minimum).','auth/too-many-requests':'Trop d’essais. Réessayez dans quelques minutes.',
+    'auth/network-request-failed':'Pas de connexion Internet.','auth/requires-recent-login':'Reconnectez-vous puis réessayez.','auth/missing-password':'Indiquez un mot de passe.',
+    'permission-denied':'Vous n’avez pas le droit de faire cette modification.','unavailable':'Pas de connexion au serveur. Réessayez.'};
+  return M[c]||(e&&e.message)||String(e);
 }
 
 const S={data:null,filter:'all',q:'',serie:'all',busy:new Set()};
@@ -282,7 +288,7 @@ function imgErr(img){
   img.outerHTML=`<div class="ini" style="background:${color(name)}">${esc(initials(name))}</div>`;
 }
 function vintedUrl(it){return it.vinted||('https://www.vinted.fr/catalog?search_text='+encodeURIComponent(it.vq||('amiibo '+it.name)))}
-function who(){const m=/amiibos?\s+(.+)$/i.exec(S.data.title);return m?m[1].trim():'lui'}
+function who(){if(S.data.owner)return S.data.owner;const m=/amiibos?\s+(.+)$/i.exec(S.data.title||'');return m?m[1].trim():'lui'}
 const isReader=()=>S.data.role==='read', isAdmin=()=>S.data.role==='admin', canToggle=()=>S.data.role==='admin'||S.data.role==='edit';
 function all(){return S.data.series.flatMap(s=>s.items.map(i=>Object.assign(i,{serie:s.name})))}
 function find(row){return all().find(i=>i.row===row)}
@@ -358,12 +364,12 @@ function card(i){
 
 /* ---------- Actions ---------- */
 document.addEventListener('click',e=>{
-  const t=e.target.closest('[data-tick]'); if(t){e.stopPropagation();toggle(+t.dataset.tick);return}
-  const c=e.target.closest('.card'); if(c) openDetail(+c.dataset.row);
+  const t=e.target.closest('[data-tick]'); if(t){e.stopPropagation();toggle(t.dataset.tick);return}
+  const c=e.target.closest('.card'); if(c) openDetail(c.dataset.row);
 });
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape') closeAll();
-  if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('card')){e.preventDefault();openDetail(+e.target.dataset.row)}
+  if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('card')){e.preventDefault();openDetail(e.target.dataset.row)}
 });
 
 function toggle(row){
@@ -381,7 +387,7 @@ function toggle(row){
 
 function openDetail(row){ const d=$('#detail'); d.dataset.row=row; refreshDetail(row,true); open(d) }
 function refreshDetail(row,force){
-  const d=$('#detail'); if(!force&&(!d.classList.contains('on')||+d.dataset.row!==row)) return;
+  const d=$('#detail'); if(!force&&(!d.classList.contains('on')||d.dataset.row!==row)) return;
   const it=find(row); if(!it) return; const A=isAdmin(), ed=S.data.role==='edit', busy=S.busy.has(row);
   const st=it.owned?'own':it.gift?'bought':'miss';
   d.innerHTML=`<div class="grab"></div><button class="x" data-close aria-label="Fermer">✕</button>
@@ -494,60 +500,84 @@ const EYE='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="c
 function pwField(id,label,ac){return `<label for="${id}">${label}</label><div class="pw"><input type="password" id="${id}" autocomplete="${ac}" required minlength="${ac==='current-password'?1:8}"><button type="button" class="eye" data-eye="${id}" aria-label="Afficher le mot de passe">${EYE}</button></div>`}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-eye]');if(!b)return;const i=document.getElementById(b.dataset.eye);i.type=i.type==='password'?'text':'password'});
 function authShell(inner){
-  closeAll(); $('#fab').hidden=true;
+  closeAll(); $('#fab').hidden=true; S.data=null;
   $('#app').innerHTML=`<div class="auth"><div class="auth-card"><div class="logo"><img src="icon-192.png" alt=""></div>${inner}</div></div>`;
 }
-function busyBtn(b,on,txt){b.disabled=on;if(on){b.dataset.t=b.textContent;b.textContent=txt||'Patientez…'}else if(b.dataset.t)b.textContent=b.dataset.t}
+function busyBtn(b,on,txt){if(!b)return;b.disabled=on;if(on){b.dataset.t=b.textContent;b.textContent=txt||'Patientez…'}else if(b.dataset.t)b.textContent=b.dataset.t}
+function lastEmail(){return store.get('amiibo_last_email')||''}
 function showLogin(msg,email){
+  email=email||lastEmail();
   authShell(`<h1>Collection amiibo</h1><p class="sub">Connectez-vous pour accéder à la collection.</p>
-    ${msg?`<div class="note">${esc(msg)}</div>`:''}
+    ${msg?`<div class="note">${msg}</div>`:''}
     <form id="loginF" class="af">
-      <label for="lEmail">E-mail</label><input type="email" id="lEmail" autocomplete="username" required value="${esc(email||store.get('amiibo_last_email')||'')}">
+      <label for="lEmail">E-mail</label><input type="email" id="lEmail" autocomplete="username" required value="${esc(email)}">
       ${pwField('lPass','Mot de passe','current-password')}
       <label class="check"><input type="checkbox" id="lRem" checked> Rester connecté sur cet appareil</label>
       <button class="big add" id="lGo">Se connecter</button>
     </form>
-    <button class="lnk center" id="toForgot">Mot de passe oublié ?</button>`);
-  $(email||store.get('amiibo_last_email')?'#lPass':'#lEmail').focus();
+    <button class="lnk center" id="toForgot">Mot de passe oublié ?</button>
+    <div class="sep"><span>Première visite ?</span></div>
+    <button class="big ghost" id="toSignup">Créer mon mot de passe</button>`);
+  $(email?'#lPass':'#lEmail').focus();
   $('#toForgot').onclick=()=>showForgot($('#lEmail').value);
+  $('#toSignup').onclick=()=>showSignup($('#lEmail').value);
   $('#loginF').onsubmit=e=>{
     e.preventDefault(); const b=$('#lGo'); busyBtn(b,true,'Connexion…');
-    const email=$('#lEmail').value.trim(), rem=$('#lRem').checked;
-    call('login',email,$('#lPass').value,rem).then(r=>{store.set('amiibo_last_email',email);setToken(r.token,rem);load()})
+    const em=$('#lEmail').value.trim();
+    call('login',em,$('#lPass').value,$('#lRem').checked).then(()=>store.set('amiibo_last_email',em))
       .catch(err=>{busyBtn(b,false);toast(err.message,true);$('#lPass').select()});
   };
 }
+function showSignup(email){
+  authShell(`<h1>Première connexion</h1><p class="sub">Utilisez l’adresse e-mail que l’administrateur a enregistrée pour vous, puis choisissez votre mot de passe.</p>
+    <form id="suF" class="af">
+      <label for="suEmail">E-mail</label><input type="email" id="suEmail" autocomplete="username" required value="${esc(email||'')}">
+      ${pwField('su1','Mot de passe (8 caractères minimum)','new-password')}${pwField('su2','Confirmer le mot de passe','new-password')}
+      <button class="big add" id="suGo">Créer mon mot de passe</button>
+    </form>
+    <button class="lnk center" id="toLogin">J’ai déjà un mot de passe</button>`);
+  $(email?'#su1':'#suEmail').focus(); $('#toLogin').onclick=()=>showLogin('',$('#suEmail').value);
+  $('#suF').onsubmit=e=>{
+    e.preventDefault();
+    if($('#su1').value!==$('#su2').value){toast('Les deux mots de passe sont différents.',true);return}
+    if($('#su1').value.length<8){toast('8 caractères minimum.',true);return}
+    const b=$('#suGo'); busyBtn(b,true,'Création…'); const em=$('#suEmail').value.trim();
+    call('signup',em,$('#su1').value).then(()=>store.set('amiibo_last_email',em)).catch(err=>{busyBtn(b,false);toast(err.message,true)});
+  };
+}
+function showVerify(email){
+  authShell(`<h1>Vérifiez votre e-mail</h1><p class="sub">Un e-mail vient d’être envoyé à <b>${esc(email)}</b>. Ouvrez-le et cliquez sur le lien pour confirmer votre adresse (pensez aux spams), puis revenez ici.</p>
+    <button class="big add" id="vDone">J’ai cliqué sur le lien</button>
+    <button class="big ghost" id="vAgain">Renvoyer l’e-mail</button>
+    <button class="lnk center" id="vOut">Utiliser une autre adresse</button>`);
+  $('#vDone').onclick=()=>{const b=$('#vDone');busyBtn(b,true,'Vérification…');call('recheck').then(ok=>{if(!ok){busyBtn(b,false);toast('Adresse pas encore confirmée. Cliquez sur le lien reçu par e-mail.',true)}}).catch(err=>{busyBtn(b,false);toast(err.message,true)})};
+  $('#vAgain').onclick=()=>{const b=$('#vAgain');busyBtn(b,true,'Envoi…');call('resendVerification').then(()=>{busyBtn(b,false);toast('E-mail renvoyé')}).catch(err=>{busyBtn(b,false);toast(err.message,true)})};
+  $('#vOut').onclick=()=>call('logout');
+}
+function showNoAccess(email){
+  authShell(`<h1>Accès en attente</h1><p class="sub">Le compte <b>${esc(email)}</b> n’a pas (ou plus) accès à la collection. Demandez à l’administrateur de vous ajouter avec cette adresse, puis reconnectez-vous.</p>
+    <button class="big add" id="naRetry">Réessayer</button><button class="lnk center" id="naOut">Se déconnecter</button>`);
+  $('#naRetry').onclick=()=>location.reload(); $('#naOut').onclick=()=>call('logout');
+}
 function showForgot(email){
-  authShell(`<h1>Mot de passe oublié</h1><p class="sub">Indiquez l’e-mail de votre compte. L’administrateur de la collection sera prévenu et vous enverra un lien pour choisir un nouveau mot de passe.</p>
+  authShell(`<h1>Mot de passe oublié</h1><p class="sub">Indiquez l’e-mail de votre compte : vous recevrez un lien pour choisir un nouveau mot de passe.</p>
     <form id="fgF" class="af"><label for="fgEmail">E-mail</label><input type="email" id="fgEmail" autocomplete="username" required value="${esc(email||'')}">
-    <button class="big add" id="fgGo">Prévenir l’administrateur</button></form>
+    <button class="big add" id="fgGo">Recevoir le lien</button></form>
     <button class="lnk center" id="toLogin">Retour à la connexion</button>`);
   $('#fgEmail').focus(); $('#toLogin').onclick=()=>showLogin();
   $('#fgF').onsubmit=e=>{
     e.preventDefault(); const b=$('#fgGo'); busyBtn(b,true,'Envoi…'); const em=$('#fgEmail').value.trim();
-    call('forgotPassword',em).then(()=>showLogin('Demande envoyée. Si un compte existe pour '+em+', l’administrateur vous transmettra un lien pour choisir un nouveau mot de passe.',em))
+    call('forgotPassword',em).then(()=>showLogin('Si un compte existe pour <b>'+esc(em)+'</b>, un e-mail vient de lui être envoyé avec un lien pour choisir un nouveau mot de passe. Pensez à regarder dans les spams.',em))
       .catch(err=>{busyBtn(b,false);toast(err.message,true)});
   };
 }
-function showSetPassword(linkToken){
-  authShell(`<div class="loader" style="min-height:120px"><div class="spin"></div></div>`);
-  call('resetInfo',linkToken).then(info=>{
-    authShell(`<h1>${info.kind==='invite'?'Bienvenue '+esc(info.name)+' !':'Nouveau mot de passe'}</h1>
-      <p class="sub">${info.kind==='invite'?'Choisissez le mot de passe de votre compte':'Choisissez un nouveau mot de passe pour'} <b>${esc(info.email)}</b>.</p>
-      <form id="spF" class="af">${pwField('sp1','Mot de passe (8 caractères minimum)','new-password')}${pwField('sp2','Confirmer le mot de passe','new-password')}
-      <button class="big add" id="spGo">Enregistrer et me connecter</button></form>`);
-    $('#sp1').focus();
-    $('#spF').onsubmit=e=>{
-      e.preventDefault();
-      if($('#sp1').value!==$('#sp2').value){toast('Les deux mots de passe sont différents.',true);return}
-      const b=$('#spGo'); busyBtn(b,true,'Enregistrement…');
-      call('setPasswordWithToken',linkToken,$('#sp1').value).then(r=>{
-        store.set('amiibo_last_email',r.user.email); setToken(r.token,true);
-        history.replaceState(null,'',location.pathname); toast('Mot de passe enregistré'); load();
-      }).catch(err=>{busyBtn(b,false);toast(err.message,true)});
-    };
-  }).catch(err=>{history.replaceState(null,'',location.pathname);showLogin(err.message)});
+function showImport(){
+  authShell(`<h1>Bienvenue !</h1><p class="sub">La base de données est vide. Importez la collection (132 amiibo, séries, cadeaux déjà signalés et comptes).</p>
+    <button class="big add" id="impGo">Importer la collection</button><button class="lnk center" id="impOut">Se déconnecter</button>`);
+  $('#impOut').onclick=()=>call('logout');
+  $('#impGo').onclick=()=>{const b=$('#impGo');busyBtn(b,true,'Import en cours…');call('importSeed').then(n=>toast(n+' éléments importés')).catch(err=>{busyBtn(b,false);toast(err.message,true)})};
 }
+function showLoading(){ $('#app').innerHTML='<div class="loader"><div class="spin"></div>Chargement de la collection…</div>' }
 
 /* ---------- Mon compte ---------- */
 function openAccount(){
@@ -555,21 +585,29 @@ function openAccount(){
   d.innerHTML=`<div class="grab"></div><button class="x" data-close aria-label="Fermer">✕</button>
     <div class="acct"><div class="avatar big-av" style="background:${color(u.user||'?')}">${esc(initials(u.user||'?'))}</div>
     <h3>${esc(u.user)}</h3><small>${esc(u.email||'')} · ${u.role==='admin'?'admin':u.role==='edit'?'collection':'proche'}</small></div>
-    ${u.role==='admin'?`<button class="big add" id="goAccounts">👥 Gérer les comptes${u.requests?` <span class="dot-n">${u.requests}</span>`:''}</button>`:''}
+    ${u.role==='admin'?`<button class="big add" id="goAccounts">👥 Gérer les comptes</button><button class="big ghost" id="goExport">⬇️ Exporter la collection (Excel / CSV)</button>`:''}
     <details class="imgEdit"><summary>🔑 Changer mon mot de passe</summary>
       <form id="cpF">${pwField('cp0','Mot de passe actuel','current-password')}${pwField('cp1','Nouveau mot de passe (8 caractères minimum)','new-password')}${pwField('cp2','Confirmer','new-password')}
-      <button class="big add" id="cpGo">Changer le mot de passe</button></form>
-      <p>Vos autres appareils seront déconnectés.</p></details>
+      <button class="big add" id="cpGo">Changer le mot de passe</button></form></details>
     <button class="big ghost" id="logout">Se déconnecter</button>`;
   open(d);
   const ga=$('#goAccounts'); if(ga) ga.onclick=openAccounts;
-  $('#logout').onclick=()=>{call('logout').catch(()=>{});setToken('');S.data=null;showLogin('Vous êtes déconnecté.')};
+  const ge=$('#goExport'); if(ge) ge.onclick=exportCsv;
+  $('#logout').onclick=()=>call('logout');
   $('#cpF').onsubmit=e=>{
     e.preventDefault(); if($('#cp1').value!==$('#cp2').value){toast('Les deux mots de passe sont différents.',true);return}
     const b=$('#cpGo'); busyBtn(b,true);
-    call('changePassword',$('#cp0').value,$('#cp1').value).then(r=>{setToken(r.token,!!store.get('amiibo_t'));closeAll();toast('Mot de passe changé')})
+    call('changePassword',$('#cp0').value,$('#cp1').value).then(()=>{closeAll();toast('Mot de passe changé')})
       .catch(err=>{busyBtn(b,false);toast(err.message,true)});
   };
+}
+function exportCsv(){
+  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const rows=[['Série','N°','Nom','Dans la collection','Acheté (cadeau)','Acheté par','Lien boutique','Lien Vinted','Recherche Vinted','Image']];
+  S.data.series.forEach(s=>s.items.forEach(i=>rows.push([s.name,i.num,i.name,i.owned?'oui':'non',i.gift&&!i.owned?'oui':'',i.gift&&i.gift.by||'',i.nintendo,i.vinted,i.vq,i.img])));
+  const blob=new Blob(['﻿'+rows.map(r=>r.map(q).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='collection-amiibo-'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
 }
 
 /* ---------- Gestion des comptes (admin) ---------- */
@@ -585,12 +623,11 @@ function renderAccounts(list){
     <h3 class="t">Comptes <span class="cntb">${list.length}</span></h3>
     <p class="hint" style="text-align:left;margin-bottom:12px">Admin : tout. Collection : coche sa collection, ne voit pas les achats. Proche : signale un cadeau acheté.</p>
     <button class="big add" id="accNew">＋ Nouveau compte</button>
-    ${list.some(a=>a.request)?`<div class="note warn">🔑 ${list.filter(a=>a.request).length===1?'Une personne a':'Des personnes ont'} demandé un nouveau mot de passe. Ouvrez son compte et créez-lui un lien.</div>`:''}
     <div class="acclist">${list.map((a,i)=>`<div class="accrow ${a.active?'':'off'}">
       <div class="avatar" style="background:${color(a.name||a.email)}">${esc(initials(a.name||a.email))}</div>
       <div class="accinfo"><b>${esc(a.name)}${a.me?' <i>(vous)</i>':''}</b><small>${esc(a.email)}</small>
-        <div class="tags"><span class="tag r-${esc(a.role)}">${esc(ROLE_TXT[a.role]||a.role)}</span>${a.active?'':'<span class="tag">Désactivé</span>'}${a.request?`<span class="tag req">🔑 Mot de passe oublié · ${esc(a.request)}</span>`:''}${a.hasPassword?'':'<span class="tag warn">Mot de passe à définir</span>'}${a.last?`<span class="tag soft">Vu le ${esc(a.last)}</span>`:''}</div></div>
-      <button class="mini" data-acc="${i}" aria-label="Modifier">✏️</button></div>`).join('')}</div>`;
+        <div class="tags"><span class="tag r-${esc(a.role)}">${esc(ROLE_TXT[a.role]||a.role)}</span>${a.active?'':'<span class="tag">Désactivé</span>'}${a.last?`<span class="tag soft">Vu le ${esc(a.last)}</span>`:'<span class="tag warn">Jamais connecté</span>'}</div></div>
+      ${a.locked?'':`<button class="mini" data-acc="${i}" aria-label="Modifier">✏️</button>`}</div>`).join('')}</div>`;
   $('#accNew').onclick=()=>editAccount(null,list);
   d.querySelectorAll('[data-acc]').forEach(b=>b.onclick=()=>editAccount(list[+b.dataset.acc],list));
 }
@@ -601,60 +638,54 @@ function editAccount(a,list){
     <h3 class="t">${isNew?'Nouveau compte':esc(a.name)}</h3>
     <form id="accF">
       <label for="aName">Nom</label><input type="text" id="aName" required value="${esc(a.name)}" placeholder="Ex. Mamie">
-      <label for="aEmail">E-mail</label><input type="email" id="aEmail" required value="${esc(a.email)}" placeholder="adresse@exemple.fr">
+      <label for="aEmail">E-mail</label><input type="email" id="aEmail" required value="${esc(a.email)}" placeholder="adresse@exemple.fr" ${isNew?'':'readonly'}>
       <label for="aRole">Rôle</label><select id="aRole" ${a.me?'disabled':''}>${['admin','collection','proche'].map(r=>`<option value="${r}" ${a.role===r?'selected':''}>${ROLE_TXT[r]}</option>`).join('')}</select>
       <label class="check"><input type="checkbox" id="aActive" ${a.active?'checked':''} ${a.me?'disabled':''}> Compte actif</label>
       <button class="big add" id="accGo">${isNew?'Créer le compte':'Enregistrer'}</button>
     </form>
-    ${isNew?'':`<div class="accact">
-      <button class="big ${a.request?'add':'ghost'}" id="accLink">🔑 ${a.hasPassword?'Créer un lien « nouveau mot de passe »':'Créer le lien d’invitation'}</button>
+    ${isNew?'':`<div class="accact"><button class="big ghost" id="accLink">📤 Renvoyer les instructions de connexion</button>
       ${a.me?'':`<button class="big danger" id="accDel">Supprimer le compte</button>`}</div>`}
     <div id="linkBox"></div>`;
   $('#accBack').onclick=()=>{$('#accBack').disabled=true;call('listAccounts').then(renderAccounts).catch(err=>toast(err.message,true))};
   $('#accF').onsubmit=e=>{
     e.preventDefault(); const b=$('#accGo'); busyBtn(b,true);
-    const p={name:$('#aName').value.trim(),email:$('#aEmail').value.trim(),role:$('#aRole').value,active:$('#aActive').checked,originalEmail:isNew?'':a.email};
+    const p={name:$('#aName').value.trim(),email:$('#aEmail').value.trim().toLowerCase(),role:$('#aRole').value,active:$('#aActive').checked,isNew};
     call('saveAccount',p).then(nl=>{
-      if(isNew&&p.active){
-        const na=nl.find(x=>x.email===p.email.toLowerCase())||p;
-        return call('sendAccountLink',p.email).then(r=>{editAccount(na,nl);showLink(r,na);toast('Compte créé')});
-      }
-      renderAccounts(nl); toast(isNew?'Compte créé':'Compte enregistré');
+      if(isNew){const na=nl.find(x=>x.email===p.email)||p;editAccount(na,nl);showLink(na);toast('Compte créé');return}
+      renderAccounts(nl); toast('Compte enregistré');
     }).catch(err=>{busyBtn(b,false);toast(err.message,true)});
   };
-  const lk=$('#accLink'); if(lk) lk.onclick=()=>{busyBtn(lk,true,'Création…');call('sendAccountLink',a.email).then(r=>{busyBtn(lk,false);showLink(r,a);if(a.request&&S.data&&S.data.requests){a.request='';S.data.requests--;render()}}).catch(err=>{busyBtn(lk,false);toast(err.message,true)})};
+  const lk=$('#accLink'); if(lk) lk.onclick=()=>showLink(a);
   const del=$('#accDel'); if(del) del.onclick=()=>{
     if(!del.dataset.ok){del.dataset.ok=1;del.textContent='Confirmer la suppression de '+a.name;return}
     busyBtn(del,true); call('deleteAccount',a.email).then(nl=>{renderAccounts(nl);toast('Compte supprimé')}).catch(err=>{busyBtn(del,false);toast(err.message,true)});
   };
 }
-function showLink(r,a){
-  const msg=(r.invite?'Bonjour '+a.name+', voici ton accès à la collection amiibo : choisis ton mot de passe avec ce lien : '
-                     :'Bonjour '+a.name+', voici le lien pour choisir un nouveau mot de passe pour la collection amiibo : ')+r.url;
-  $('#linkBox').innerHTML=`<div class="note">🔗 Transmettez ce lien à <b>${esc(a.name)}</b> (SMS, WhatsApp…). Il est valable ${r.days} jours et ne sert qu’une fois.
-    <div class="copy"><input readonly value="${esc(r.url)}" id="lnkIn"><button class="mini" id="lnkCp">Copier</button></div>
-    ${navigator.share?`<button class="big add" id="lnkSh" style="margin-top:10px">📤 Envoyer le lien…</button>`:''}</div>`;
-  $('#lnkCp').onclick=()=>{const i=$('#lnkIn');i.select();(navigator.clipboard?navigator.clipboard.writeText(msg):Promise.reject()).then(()=>toast('Message et lien copiés')).catch(()=>{document.execCommand('copy');toast('Lien copié')})};
+function showLink(a){
+  const url=location.origin+location.pathname;
+  const msg=`Bonjour ${a.name}, tu as accès à la collection amiibo de ${who()} : ${url}\nPremière fois : touche « Créer mon mot de passe » et utilise l’adresse ${a.email}. Tu recevras un e-mail pour confirmer ton adresse.`;
+  $('#linkBox').innerHTML=`<div class="note">📤 Envoyez ces instructions à <b>${esc(a.name)}</b> (SMS, WhatsApp, e-mail…) :
+    <div class="msgbox">${esc(msg).replace(/\n/g,'<br>')}</div>
+    <div class="copy"><button class="big add" id="lnkCp">Copier le message</button>${navigator.share?`<button class="big add" id="lnkSh">📤 Envoyer…</button>`:''}</div></div>`;
+  $('#lnkCp').onclick=()=>{(navigator.clipboard?navigator.clipboard.writeText(msg):Promise.reject()).then(()=>toast('Message copié')).catch(()=>toast('Copie impossible : sélectionnez le texte',true))};
   const sh=$('#lnkSh'); if(sh) sh.onclick=()=>navigator.share({title:'Collection amiibo',text:msg}).catch(()=>{});
   $('#linkBox').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
-/* ---------- Démarrage ---------- */
-function load(){
-  const link=new URLSearchParams(location.search).get('lien');
-  if(link&&!window.DEMO_API){showSetPassword(link);return}
-  if(!TOKEN&&!window.DEMO_API){showLogin();return}
-  const cached=store.get('amiibo_t')?store.get('amiibo_cache'):null;
-  if(cached&&!S.data){try{S.data=JSON.parse(cached);render()}catch(e){}}
-  if(!S.data) $('#app').innerHTML='<div class="loader"><div class="spin"></div>Chargement de la collection…</div>';
-  call('getData').then(d=>{S.data=d;if(store.get('amiibo_t'))store.set('amiibo_cache',JSON.stringify(d));if(!document.querySelector('.sheet.on'))render()}).catch(err=>{
-    if(err.auth){setToken('');S.data=null;showLogin(err.message);return}
-    if(S.data){toast(err.message,true);return}
-    $('#app').innerHTML=`<div class="empty"><div>😕</div>${esc(err.message)}<br><br><button class="big add" style="max-width:240px;margin:auto" onclick="location.reload()">Réessayer</button></div>`;
-  });
-}
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&TOKEN&&S.data&&!document.querySelector('.sheet.on'))call('getData').then(d=>{S.data=d;render()}).catch(err=>{if(err.auth){setToken('');S.data=null;showLogin(err.message)}})});
+/* ---------- Démarrage (appelé par le module Firebase) ---------- */
+window.UI={
+  login:showLogin, verify:showVerify, noAccess:showNoAccess, importSeed:showImport, loading:showLoading,
+  data(d){
+    const first=!S.data; S.data=d;
+    const det=$('#detail');
+    if(first||!document.querySelector('.sheet.on')) render();
+    else { render(); if(det.classList.contains('on')&&det.dataset.row) refreshDetail(det.dataset.row); }
+  },
+  toast
+};
+function load(){ if(window.DEMO_API){call('getData').then(d=>UI.data(d))} }
 load();
 </script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
