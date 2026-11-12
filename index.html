@@ -61,6 +61,10 @@ button,input,select{font:inherit;color:inherit}
 .seg button em{font-style:normal;opacity:.7;font-weight:700;margin-left:4px}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 4px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
+/* Ordinateur : les séries passent à la ligne, toutes visibles */
+@media (min-width:720px){.chips{flex-wrap:wrap;overflow:visible;padding-bottom:6px}}
+/* Mobile : défilement au doigt, avec un fondu à droite pour montrer qu'il y a la suite */
+@media (max-width:719px){.chips{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent);padding-right:40px;scroll-padding:0 40px}}
 .chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 13px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap}
 .chip.on{background:var(--accent2);border-color:var(--accent2);color:#fff}
 .chip i{font-style:normal;opacity:.65;margin-left:5px}
